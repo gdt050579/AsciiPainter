@@ -12,7 +12,7 @@ pub enum DrawingObject {
 }
 
 impl DrawingObject {
-    pub fn paint(&self, surface: &mut Surface, theme: &Theme, rect: Rect) {
+    pub fn paint(&self, surface: &mut Surface,  rect: Rect) {
         match self {
             DrawingObject::Selection => {}
             DrawingObject::Rectangle(rectangle) => {

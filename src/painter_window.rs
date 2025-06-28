@@ -173,6 +173,7 @@ impl AccordionEvents for PainterWindow {
         if let Some(drawing_object) = d {
             let h = self.painter;
             if let Some(p) = self.control_mut(h) {
+                p.write_current_object();
                 p.reset(drawing_object);
             }
             self.update_proprties();

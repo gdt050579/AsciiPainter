@@ -63,6 +63,13 @@ impl PainterControl {
             rect.line_type = line_type;
         }
     }
+    pub fn write_current_object(&mut self) {
+        if self.selection.is_visible() {
+            self.drawwing_object
+                .paint(&mut self.surface, self.selection.rect());
+            self.selection = Selection::new();
+        }
+    }
 }
 
 impl OnPaint for PainterControl {
@@ -75,8 +82,7 @@ impl OnPaint for PainterControl {
         surface.draw_surface(o.x, o.y, &self.surface);
         surface.set_origin(o.x, o.y);
         if self.selection.is_visible() {
-            self.drawwing_object
-                .paint(surface, theme, self.selection.rect());
+            self.drawwing_object.paint(surface, self.selection.rect());
         }
         self.selection.paint(surface, theme);
     }
@@ -90,7 +96,14 @@ impl OnMouseEvent for PainterControl {
         if self.selection.process_mouse_event(event) {
             return EventProcessStatus::Processed;
         }
-        EventProcessStatus::Ignored
+        match event {
+            MouseEvent::Released(_) => {
+                self.write_current_object();
+                self.selection = Selection::new();
+                EventProcessStatus::Processed
+            }
+            _ => EventProcessStatus::Ignored,
+        }
     }
 }
 
