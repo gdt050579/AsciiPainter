@@ -34,10 +34,28 @@ impl Default for FillRectangleObject {
     }
 }
 
+pub struct LineObject {
+    pub fore: Color,
+    pub back: Color,
+    pub line_type: LineType,
+    pub vertical: bool,
+}
+impl Default for LineObject {
+    fn default() -> Self {
+        Self {
+            fore: Color::White,
+            back: Color::Black,
+            line_type: LineType::Single,
+            vertical: false,
+        }
+    }
+}
+
 pub enum DrawingObject {
     Selection,
     Rectangle(RectangleObject),
     FillRectangle(FillRectangleObject),
+    Line(LineObject),
 }
 
 impl DrawingObject {
@@ -61,6 +79,25 @@ impl DrawingObject {
                         fill_rect.flags,
                     ),
                 );
+            }
+            DrawingObject::Line(line) => {
+                if line.vertical {
+                    surface.draw_vertical_line(
+                        rect.center_x(),
+                        rect.top(),
+                        rect.bottom(),
+                        line.line_type,
+                        CharAttribute::with_color(line.fore, line.back)
+                    );
+                } else {
+                    surface.draw_horizontal_line(
+                        rect.left(),
+                        rect.center_y(),
+                        rect.right(),
+                        line.line_type,
+                        CharAttribute::with_color(line.fore, line.back)
+                    );                    
+                }
             }
         }
     }

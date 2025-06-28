@@ -3,12 +3,13 @@ use std::path::Path;
 use crate::drawing_object::DrawingObject;
 use crate::drawing_object::RectangleObject;
 use crate::drawing_object::FillRectangleObject;
+use crate::drawing_object::LineObject;
 use appcui::graphics::LineType;
 use appcui::prelude::*;
 
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents,
+#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents +RadioBoxEvents,
         commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
@@ -72,15 +73,15 @@ impl PainterWindow {
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
         w.fill_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
 
-        // Rectangle panel
+        // Line panel
         let id = acc.add_panel("Line");
         acc.add(id, label!("'Type:',x:1,y:1,w:5,h:1"));
-        w.rectangle_line_type = acc.add(id, selector!("LineType,l:7,t:1,r:1,value:Single"));
+        w.line_type = acc.add(id, selector!("LineType,l:7,t:1,r:1,value:Single"));
         acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
-        w.rectangle_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
+        w.line_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
-        w.rectangle_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));   
-        acc.add(id, radiobox!("Vertical,l:1,t:7,r:1,h:1,selected:true"));     
+        w.line_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));   
+        w.line_vert = acc.add(id, radiobox!("Vertical,l:1,t:7,r:1,h:1,selected:true"));     
         acc.add(id, radiobox!("Horizontal,l:1,t:8,r:1,h:1,selected:false"));     
 
         let mut p = PainterControl::new(100, 100);
@@ -140,19 +141,28 @@ impl PainterWindow {
     }
 
     fn update_proprties(&mut self) {
+        // rect
         let rect_back = self.control(self.rectangle_back).unwrap().color();
         let rect_fore = self.control(self.rectangle_fore).unwrap().color();
         let rect_line_type = self.control(self.rectangle_line_type).unwrap().value();
 
+        // fill
         let fill_back = self.control(self.fill_back).unwrap().color();
         let fill_fore = self.control(self.fill_fore).unwrap().color();
         let fill_char = self.control(self.fill_char).unwrap().text().chars().next().unwrap_or(0 as char);
+
+        // line
+        let line_back = self.control(self.line_back).unwrap().color();
+        let line_fore = self.control(self.line_fore).unwrap().color();
+        let line_type = self.control(self.line_type).unwrap().value();
+        let line_vert = self.control(self.line_vert).unwrap().is_selected();
 
         // update all properties
         let h = self.painter;
         if let Some(p) = self.control_mut(h) {
             p.update_rectangle_properties(rect_fore, rect_back, rect_line_type);
             p.update_fillrectangle_properties(fill_fore, fill_back, fill_char, CharFlags::None);
+            p.update_line_properties(line_fore, line_back, line_type, line_vert);
         }
     }
 }
@@ -197,6 +207,7 @@ impl AccordionEvents for PainterWindow {
             0 => Some(DrawingObject::Selection),
             1 => Some(DrawingObject::Rectangle(RectangleObject::default())),
             2 => Some(DrawingObject::FillRectangle(FillRectangleObject::default())),
+            3 => Some(DrawingObject::Line(LineObject::default())),
             _ => None,
         };
         if let Some(drawing_object) = d {
@@ -219,7 +230,12 @@ impl ColorPickerEvents for PainterWindow {
         EventProcessStatus::Processed
     }
 }
-
+impl RadioBoxEvents for PainterWindow {
+    fn on_selected(&mut self, _: Handle<RadioBox>) -> EventProcessStatus {
+        self.update_proprties();
+        EventProcessStatus::Processed
+    }
+}
 impl TextFieldEvents for PainterWindow {
     fn on_validate(&mut self, _: Handle<TextField>, _: &str) -> EventProcessStatus {
         self.update_proprties();

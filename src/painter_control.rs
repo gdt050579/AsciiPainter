@@ -71,6 +71,14 @@ impl PainterControl {
             fill_rect.flags = flags;
         }
     }
+    pub fn update_line_properties(&mut self, fore: Color, back: Color, line_type: LineType, vertical: bool) {
+        if let DrawingObject::Line(ref mut line) = self.drawwing_object {
+            line.fore = fore;
+            line.back = back;
+            line.line_type = line_type;
+            line.vertical = vertical;
+        }
+    }
     pub fn write_current_object(&mut self) {
         if self.selection.is_visible() {
             self.drawwing_object
