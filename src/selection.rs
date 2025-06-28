@@ -8,6 +8,10 @@ enum Status {
     ResizeTopRight,
     ResizeBottomLeft,
     ResizeBottomRight,
+    ResizeUpperMargin,
+    ResizeLowerMargin,
+    ResizeLeftMargin,
+    ResizeRightMargin,
     Visible,
 }
 
@@ -55,6 +59,10 @@ impl Selection {
         surface.write_char(r.left(), r.bottom(), marker);
         surface.write_char(r.right(), r.top(), marker);
         surface.write_char(r.right(), r.bottom(), marker);
+        surface.write_char(r.center_x(), r.top(), marker);
+        surface.write_char(r.center_x(), r.bottom(), marker);
+        surface.write_char(r.left(), r.center_y(), marker);
+        surface.write_char(r.right(), r.center_y(), marker);
     }
     fn mouse_pos_in_rect(&self, point: Point) -> MousePosInRect {
         let r = self.r;
@@ -117,6 +125,22 @@ impl Selection {
                     self.status = Status::ResizeBottomRight;
                     true
                 }
+                MousePosInRect::LeftMargin => {
+                    self.status = Status::ResizeLeftMargin;
+                    true
+                }
+                MousePosInRect::RightMargin => {
+                    self.status = Status::ResizeRightMargin;
+                    true
+                }
+                MousePosInRect::TopMargin => {
+                    self.status = Status::ResizeUpperMargin;
+                    true
+                }
+                MousePosInRect::BottomMargin => {
+                    self.status = Status::ResizeLowerMargin;
+                    true
+                }
                 _ => false,
             },
             _ => false,
@@ -164,6 +188,26 @@ impl Selection {
                 self.r = Rect::new(self.r.left(), self.r.top(), x, y);
                 true
             }
+            Status::ResizeUpperMargin => {
+                let y = data.y.min(self.r.bottom() - 2);
+                self.r = Rect::new(self.r.left(), y, self.r.right(), self.r.bottom());
+                true
+            }
+            Status::ResizeLowerMargin => {
+                let y = data.y.max(self.r.top() + 2);
+                self.r = Rect::new(self.r.left(), self.r.top(), self.r.right(), y);
+                true
+            }
+            Status::ResizeLeftMargin => {
+                let x = data.x.min(self.r.right() - 2);
+                self.r = Rect::new(x, self.r.top(), self.r.right(), self.r.bottom());
+                true
+            }
+            Status::ResizeRightMargin => {
+                let x = data.x.max(self.r.left() + 2);
+                self.r = Rect::new(self.r.left(), self.r.top(), x, self.r.bottom());
+                true
+            }
             _ => false,
         }
     }
@@ -179,7 +223,11 @@ impl Selection {
             | Status::ResizeBottomLeft
             | Status::ResizeTopLeft
             | Status::ResizeTopRight
-            | Status::ResizeBottomRight => {
+            | Status::ResizeBottomRight
+            | Status::ResizeLeftMargin
+            | Status::ResizeRightMargin
+            | Status::ResizeLowerMargin
+            | Status::ResizeUpperMargin => {
                 self.status = Status::Visible;
                 true
             }
