@@ -2,6 +2,8 @@ use appcui::prelude::*;
 mod painter_window;
 use painter_window::PainterWindow;
 mod painter_control;
+mod selection;
+use selection::Selection;
 use appcui::dialogs::{OpenFileDialogFlags, SaveFileDialogFlags};
 
 #[Desktop(events = [MenuEvents, DesktopEvents],  
@@ -81,14 +83,14 @@ impl MenuEvents for PainterDesktop {
 }
 
 fn main() -> Result<(), appcui::system::Error> {
-    #[cfg(target_os = "windows")]
-    App::with_backend(appcui::backend::Type::WindowsVT)
-        .desktop(PainterDesktop::new())
-        .menu_bar()
-        .build()?
-        .run();
+    // #[cfg(target_os = "windows")]
+    // App::with_backend(appcui::backend::Type::WindowsVT)
+    //     .desktop(PainterDesktop::new())
+    //     .menu_bar()
+    //     .build()?
+    //     .run();
 
-    #[cfg(not(target_os = "windows"))]
+    // #[cfg(not(target_os = "windows"))]
     App::new()
         .desktop(PainterDesktop::new())
         .menu_bar()

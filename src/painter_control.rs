@@ -1,11 +1,13 @@
 use std::path::Path;
 
 use appcui::prelude::*;
+use super::Selection;
 
 #[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize + OnKeyPressed)]
 pub struct PainterControl {
     surface: Surface,
     scrollbars: ScrollBars,
+    selection: Selection,
 }
 
 impl PainterControl {
@@ -14,8 +16,9 @@ impl PainterControl {
             base: ControlBase::with_focus_overlay(Layout::new("d:c")),
             surface: Surface::new(width, height),
             scrollbars: ScrollBars::new(true),
+            selection: Selection::new(),
         };
-        me.set_components_toolbar_margins(3, 0);
+        me.set_components_toolbar_margins(3, 5);
         me
     }
 
@@ -49,12 +52,17 @@ impl OnPaint for PainterControl {
         }
         let o = self.scrollbars.offset();
         surface.draw_surface(o.x, o.y, &self.surface);
+        surface.set_origin(o.x, o.y);
+        self.selection.paint(surface, theme);
     }
 }
 
 impl OnMouseEvent for PainterControl {
     fn on_mouse_event(&mut self, event: &MouseEvent) -> EventProcessStatus {
         if self.scrollbars.process_mouse_event(event) {
+            return EventProcessStatus::Processed;
+        }
+        if self.selection.process_mouse_event(event) {
             return EventProcessStatus::Processed;
         }
         EventProcessStatus::Ignored
