@@ -1,0 +1,7 @@
+[package]
+name = "AsciiPainter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+appcui = { version =  "0.1.5", features = ["TRUE_COLORS"] }
