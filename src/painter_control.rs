@@ -1,13 +1,16 @@
 use std::path::Path;
 
 use appcui::prelude::*;
+
 use super::Selection;
+use super::DrawingObject;
 
 #[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize + OnKeyPressed)]
 pub struct PainterControl {
     surface: Surface,
     scrollbars: ScrollBars,
     selection: Selection,
+    drawwing_object: DrawingObject
 }
 
 impl PainterControl {
@@ -17,6 +20,7 @@ impl PainterControl {
             surface: Surface::new(width, height),
             scrollbars: ScrollBars::new(true),
             selection: Selection::new(),
+            drawwing_object: DrawingObject::Selection,
         };
         me.set_components_toolbar_margins(3, 5);
         me
@@ -53,6 +57,9 @@ impl OnPaint for PainterControl {
         let o = self.scrollbars.offset();
         surface.draw_surface(o.x, o.y, &self.surface);
         surface.set_origin(o.x, o.y);
+        if self.selection.is_visible() {
+            self.drawwing_object.paint(surface, theme);
+        }   
         self.selection.paint(surface, theme);
     }
 }

@@ -4,6 +4,8 @@ use painter_window::PainterWindow;
 mod painter_control;
 mod selection;
 use selection::Selection;
+mod drawing_object;
+use drawing_object::DrawingObject;
 use appcui::dialogs::{OpenFileDialogFlags, SaveFileDialogFlags};
 
 #[Desktop(events = [MenuEvents, DesktopEvents],  

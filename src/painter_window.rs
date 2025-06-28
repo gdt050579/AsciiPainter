@@ -3,13 +3,16 @@ use std::path::Path;
 use appcui::prelude::*;
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + ButtonEvents, commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
+#[Window(events = MenuEvents + ColorPickerEvents + ButtonEvents, 
+        commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
     acc: Handle<Accordion>,
     menu: Handle<Menu>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumSelector)]
+enum BlaBla { A, B, C, D }
 impl PainterWindow {
     fn inner_new(name: &str, path: Option<&Path>) -> Result<Self, String>  {
         let mut w = Self {
@@ -21,6 +24,29 @@ impl PainterWindow {
 
         let mut vs = vsplitter!("pos: 75%,d:c");
         let mut acc = accordion!("d:c,w:100%,h:100%");
+
+        // Selection panel
+        let id = acc.add_panel("Selection");
+
+        // Rectangle panel
+        let id = acc.add_panel("Rectandle");
+        acc.add(id, label!("'Type:',x:1,y:1,w:5,h:1"));
+        acc.add(id, selector!("BlaBla,l:7,t:1,r:1,value:A"));
+        acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
+        acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
+        acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
+        acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
+
+        // Filled rectangle panel
+        let id = acc.add_panel("Filled Rectangle");
+        acc.add(id, label!("'Char:',x:1,y:1,w:5,h:1"));
+        acc.add(id, textfield!("*,l:7,t:1,r:1"));
+        acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
+        acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
+        acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
+        acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
+
+
         let mut p = PainterControl::new(100,100);
         w.painter = vs.add(vsplitter::Panel::Left, p);
         w.acc = vs.add(vsplitter::Panel::Right, acc);
