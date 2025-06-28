@@ -6,11 +6,32 @@ pub struct RectangleObject {
     pub line_type: LineType,
 }
 
+impl Default for RectangleObject {
+    fn default() -> Self {
+        Self {
+            fore: Color::White,
+            back: Color::Black,
+            line_type: LineType::Single,
+        }
+    }
+}
+
 pub struct FillRectangleObject {
     pub fore: Color,
     pub back: Color,
     pub ch: char,
     pub flags: CharFlags,
+}
+
+impl Default for FillRectangleObject {
+    fn default() -> Self {
+        Self {
+            fore: Color::White,
+            back: Color::Black,
+            ch: ' ',
+            flags: CharFlags::None,
+        }
+    }
 }
 
 pub enum DrawingObject {

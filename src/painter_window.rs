@@ -1,6 +1,8 @@
 use std::path::Path;
 
 use crate::drawing_object::DrawingObject;
+use crate::drawing_object::RectangleObject;
+use crate::drawing_object::FillRectangleObject;
 use appcui::graphics::LineType;
 use appcui::prelude::*;
 
@@ -20,6 +22,11 @@ pub struct PainterWindow {
     fill_fore: Handle<ColorPicker>,
     fill_back: Handle<ColorPicker>,
     fill_char: Handle<TextField>,
+    // line
+    line_fore: Handle<ColorPicker>,
+    line_back: Handle<ColorPicker>,
+    line_type: Handle<Selector<LineType>>,
+    line_vert: Handle<RadioBox>,
 }
 
 impl PainterWindow {
@@ -35,6 +42,10 @@ impl PainterWindow {
             fill_fore: Handle::None,
             fill_back: Handle::None,
             fill_char: Handle::None,
+            line_fore: Handle::None,
+            line_back: Handle::None,
+            line_type: Handle::None,
+            line_vert: Handle::None,
         };
 
         let mut vs = vsplitter!("pos: 75%,d:c");
@@ -60,6 +71,17 @@ impl PainterWindow {
         w.fill_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
         w.fill_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
+
+        // Rectangle panel
+        let id = acc.add_panel("Line");
+        acc.add(id, label!("'Type:',x:1,y:1,w:5,h:1"));
+        w.rectangle_line_type = acc.add(id, selector!("LineType,l:7,t:1,r:1,value:Single"));
+        acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
+        w.rectangle_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
+        acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
+        w.rectangle_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));   
+        acc.add(id, radiobox!("Vertical,l:1,t:7,r:1,h:1,selected:true"));     
+        acc.add(id, radiobox!("Horizontal,l:1,t:8,r:1,h:1,selected:false"));     
 
         let mut p = PainterControl::new(100, 100);
         w.painter = vs.add(vsplitter::Panel::Left, p);
@@ -173,21 +195,8 @@ impl AccordionEvents for PainterWindow {
     ) -> EventProcessStatus {
         let d = match new_panel_index {
             0 => Some(DrawingObject::Selection),
-            1 => Some(DrawingObject::Rectangle(
-                crate::drawing_object::RectangleObject {
-                    fore: Color::White,
-                    back: Color::Black,
-                    line_type: LineType::Single,
-                },
-            )),
-            2 => Some(DrawingObject::FillRectangle(
-                crate::drawing_object::FillRectangleObject {
-                    fore: Color::White,
-                    back: Color::Black,
-                    ch: ' ',
-                    flags: CharFlags::None,
-                },
-            )),
+            1 => Some(DrawingObject::Rectangle(RectangleObject::default())),
+            2 => Some(DrawingObject::FillRectangle(FillRectangleObject::default())),
             _ => None,
         };
         if let Some(drawing_object) = d {
