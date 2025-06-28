@@ -45,6 +45,14 @@ impl Selection {
     pub(crate) fn is_visible(&self) -> bool {
         !matches!(self.status, Status::None)
     }
+    pub(crate) fn rect(&self) -> Rect {
+        Rect::new(
+            self.r.left() + 1,
+            self.r.top() + 1,
+            self.r.right() - 1,
+            self.r.bottom() - 1,
+        )
+    }
     pub(crate) fn paint(&self, surface: &mut Surface, theme: &Theme) {
         let r = self.r;
         let ch = char!(".,gray,black");

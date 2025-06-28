@@ -2,15 +2,15 @@ use std::path::Path;
 
 use appcui::prelude::*;
 
-use super::Selection;
 use super::DrawingObject;
+use super::Selection;
 
 #[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize + OnKeyPressed)]
 pub struct PainterControl {
     surface: Surface,
     scrollbars: ScrollBars,
     selection: Selection,
-    drawwing_object: DrawingObject
+    drawwing_object: DrawingObject,
 }
 
 impl PainterControl {
@@ -33,11 +33,17 @@ impl PainterControl {
     pub fn load_from_file(&mut self, file: &Path) -> Result<(), String> {
         if let Ok(surface) = Surface::from_file(file) {
             self.surface = surface;
-            self.scrollbars
-                .resize(self.surface.size().width as u64, self.surface.size().height as u64, &self.base);
+            self.scrollbars.resize(
+                self.surface.size().width as u64,
+                self.surface.size().height as u64,
+                &self.base,
+            );
             Ok(())
         } else {
-            Err(format!("Failed to load surface from file '{}'", file.display()))
+            Err(format!(
+                "Failed to load surface from file '{}'",
+                file.display()
+            ))
         }
     }
 
@@ -45,6 +51,17 @@ impl PainterControl {
         self.surface
             .save(path)
             .map_err(|e| format!("Failed to save surface to file '{}': {}", path.display(), e))
+    }
+    pub fn reset(&mut self, d: DrawingObject) {
+        self.selection = Selection::new();
+        self.drawwing_object = d;
+    }
+    pub fn update_rectangle_properties(&mut self, fore: Color, back: Color, line_type: LineType) {
+        if let DrawingObject::Rectangle(ref mut rect) = self.drawwing_object {
+            rect.fore = fore;
+            rect.back = back;
+            rect.line_type = line_type;
+        }
     }
 }
 
@@ -58,8 +75,9 @@ impl OnPaint for PainterControl {
         surface.draw_surface(o.x, o.y, &self.surface);
         surface.set_origin(o.x, o.y);
         if self.selection.is_visible() {
-            self.drawwing_object.paint(surface, theme);
-        }   
+            self.drawwing_object
+                .paint(surface, theme, self.selection.rect());
+        }
         self.selection.paint(surface, theme);
     }
 }
@@ -80,23 +98,31 @@ impl OnKeyPressed for PainterControl {
     fn on_key_pressed(&mut self, key: Key, _character: char) -> EventProcessStatus {
         match key.value() {
             key!("Up") => {
-                self.scrollbars
-                    .set_indexes(self.scrollbars.horizontal_index(), self.scrollbars.vertical_index().saturating_sub(1));
+                self.scrollbars.set_indexes(
+                    self.scrollbars.horizontal_index(),
+                    self.scrollbars.vertical_index().saturating_sub(1),
+                );
                 EventProcessStatus::Processed
             }
             key!("Down") => {
-                self.scrollbars
-                    .set_indexes(self.scrollbars.horizontal_index(), self.scrollbars.vertical_index() + 1);
+                self.scrollbars.set_indexes(
+                    self.scrollbars.horizontal_index(),
+                    self.scrollbars.vertical_index() + 1,
+                );
                 EventProcessStatus::Processed
             }
             key!("Left") => {
-                self.scrollbars
-                    .set_indexes(self.scrollbars.horizontal_index().saturating_sub(1), self.scrollbars.vertical_index());
+                self.scrollbars.set_indexes(
+                    self.scrollbars.horizontal_index().saturating_sub(1),
+                    self.scrollbars.vertical_index(),
+                );
                 EventProcessStatus::Processed
             }
             key!("Right") => {
-                self.scrollbars
-                    .set_indexes(self.scrollbars.horizontal_index() + 1, self.scrollbars.vertical_index());
+                self.scrollbars.set_indexes(
+                    self.scrollbars.horizontal_index() + 1,
+                    self.scrollbars.vertical_index(),
+                );
                 EventProcessStatus::Processed
             }
             _ => EventProcessStatus::Ignored,
