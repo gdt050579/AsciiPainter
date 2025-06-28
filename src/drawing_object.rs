@@ -51,11 +51,29 @@ impl Default for LineObject {
     }
 }
 
+pub struct TextObject {
+    pub txt: String,
+    pub fore: Color,
+    pub back: Color,
+    pub flags: CharFlags,
+}
+impl Default for TextObject {
+    fn default() -> Self {
+        Self {
+            txt: String::new(),
+            fore: Color::White,
+            back: Color::Black,
+            flags: CharFlags::None,
+        }
+    }
+}
+
 pub enum DrawingObject {
     Selection,
     Rectangle(RectangleObject),
     FillRectangle(FillRectangleObject),
     Line(LineObject),
+    Text(TextObject),
 }
 
 impl DrawingObject {
@@ -87,7 +105,7 @@ impl DrawingObject {
                         rect.top(),
                         rect.bottom(),
                         line.line_type,
-                        CharAttribute::with_color(line.fore, line.back)
+                        CharAttribute::with_color(line.fore, line.back),
                     );
                 } else {
                     surface.draw_horizontal_line(
@@ -95,9 +113,17 @@ impl DrawingObject {
                         rect.center_y(),
                         rect.right(),
                         line.line_type,
-                        CharAttribute::with_color(line.fore, line.back)
-                    );                    
+                        CharAttribute::with_color(line.fore, line.back),
+                    );
                 }
+            }
+            DrawingObject::Text(text) => {
+                let tf = TextFormatBuilder::new()
+                    .position(rect.left(), rect.top())
+                    .attribute(CharAttribute::new(text.fore,text.back,text.flags))
+                    .wrap_type(WrapType::WordWrap(rect.width() as u16))
+                    .build();
+                surface.write_text(&text.txt, &tf);
             }
         }
     }

@@ -79,6 +79,14 @@ impl PainterControl {
             line.vertical = vertical;
         }
     }
+    pub fn update_text_properties(&mut self, txt: String, fore: Color, back: Color, flags: CharFlags) {
+        if let DrawingObject::Text(ref mut text) = self.drawwing_object {
+            text.txt = txt;
+            text.fore = fore;
+            text.back = back;
+            text.flags = flags;
+        }
+    }
     pub fn write_current_object(&mut self) {
         if self.selection.is_visible() {
             self.drawwing_object

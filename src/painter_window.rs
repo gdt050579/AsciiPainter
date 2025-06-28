@@ -4,6 +4,7 @@ use crate::drawing_object::DrawingObject;
 use crate::drawing_object::RectangleObject;
 use crate::drawing_object::FillRectangleObject;
 use crate::drawing_object::LineObject;
+use crate::drawing_object::TextObject;
 use appcui::graphics::LineType;
 use appcui::prelude::*;
 
@@ -13,6 +14,7 @@ use super::painter_control::PainterControl;
         commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
+    tmp_string: String,
     acc: Handle<Accordion>,
     menu: Handle<Menu>,
     // rectangle
@@ -28,12 +30,17 @@ pub struct PainterWindow {
     line_back: Handle<ColorPicker>,
     line_type: Handle<Selector<LineType>>,
     line_vert: Handle<RadioBox>,
+    // Text
+    text_fore: Handle<ColorPicker>,
+    text_back: Handle<ColorPicker>,
+    text_content: Handle<TextArea>,
 }
 
 impl PainterWindow {
     fn inner_new(name: &str, path: Option<&Path>) -> Result<Self, String> {
         let mut w = Self {
             base: Window::new(name, Layout::new("d:c,w:60,h:20"), window::Flags::Sizeable),
+            tmp_string: String::with_capacity(1024),
             painter: Handle::None,
             acc: Handle::None,
             menu: Handle::None,
@@ -47,6 +54,9 @@ impl PainterWindow {
             line_back: Handle::None,
             line_type: Handle::None,
             line_vert: Handle::None,
+            text_fore: Handle::None,
+            text_back: Handle::None,
+            text_content: Handle::None,
         };
 
         let mut vs = vsplitter!("pos: 75%,d:c");
@@ -83,6 +93,15 @@ impl PainterWindow {
         w.line_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));   
         w.line_vert = acc.add(id, radiobox!("Vertical,l:1,t:7,r:1,h:1,selected:true"));     
         acc.add(id, radiobox!("Horizontal,l:1,t:8,r:1,h:1,selected:false"));     
+
+        // Text panel
+        let id = acc.add_panel("Text");
+        acc.add(id, label!("'Fore:',x:1,y:1,w:5,h:1"));
+        w.text_fore = acc.add(id, colorpicker!("White,l:7,t:1,r:1"));
+        acc.add(id, label!("'Back:',x:1,y:1,w:5,h:1"));
+        w.text_back = acc.add(id, colorpicker!("Black,l:7,t:3,r:1"));
+        w.text_content = acc.add(id, textarea!("'',l:1,t:5,r:1,b:0,flags:HighlightCursor"));
+
 
         let mut p = PainterControl::new(100, 100);
         w.painter = vs.add(vsplitter::Panel::Left, p);
@@ -157,12 +176,18 @@ impl PainterWindow {
         let line_type = self.control(self.line_type).unwrap().value();
         let line_vert = self.control(self.line_vert).unwrap().is_selected();
 
+        // text
+        let text_fore = self.control(self.text_fore).unwrap().color();
+        let text_back = self.control(self.text_back).unwrap().color();
+        let text_content = self.control(self.text_content).unwrap().text().to_string();
+
         // update all properties
         let h = self.painter;
         if let Some(p) = self.control_mut(h) {
             p.update_rectangle_properties(rect_fore, rect_back, rect_line_type);
             p.update_fillrectangle_properties(fill_fore, fill_back, fill_char, CharFlags::None);
             p.update_line_properties(line_fore, line_back, line_type, line_vert);
+            p.update_text_properties(text_content, text_fore, text_back, CharFlags::None);
         }
     }
 }
@@ -208,6 +233,7 @@ impl AccordionEvents for PainterWindow {
             1 => Some(DrawingObject::Rectangle(RectangleObject::default())),
             2 => Some(DrawingObject::FillRectangle(FillRectangleObject::default())),
             3 => Some(DrawingObject::Line(LineObject::default())),
+            4 => Some(DrawingObject::Text(TextObject::default())),
             _ => None,
         };
         if let Some(drawing_object) = d {
