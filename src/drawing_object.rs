@@ -6,13 +6,21 @@ pub struct RectangleObject {
     pub line_type: LineType,
 }
 
+pub struct FillRectangleObject {
+    pub fore: Color,
+    pub back: Color,
+    pub ch: char,
+    pub flags: CharFlags,
+}
+
 pub enum DrawingObject {
     Selection,
     Rectangle(RectangleObject),
+    FillRectangle(FillRectangleObject),
 }
 
 impl DrawingObject {
-    pub fn paint(&self, surface: &mut Surface,  rect: Rect) {
+    pub fn paint(&self, surface: &mut Surface, rect: Rect) {
         match self {
             DrawingObject::Selection => {}
             DrawingObject::Rectangle(rectangle) => {
@@ -20,6 +28,17 @@ impl DrawingObject {
                     rect,
                     rectangle.line_type,
                     CharAttribute::with_color(rectangle.fore, rectangle.back),
+                );
+            }
+            DrawingObject::FillRectangle(fill_rect) => {
+                surface.fill_rect(
+                    rect,
+                    Character::new(
+                        fill_rect.ch,
+                        fill_rect.fore,
+                        fill_rect.back,
+                        fill_rect.flags,
+                    ),
                 );
             }
         }

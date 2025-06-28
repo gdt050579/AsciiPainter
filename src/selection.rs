@@ -102,7 +102,7 @@ impl Selection {
                 MousePosInRect::Inside
             }
         } else {
-            MousePosInRect::BottomMargin
+            MousePosInRect::Outside
         }
     }
     fn on_mouse_pressed(&mut self, data: &MouseEventData) -> bool {
@@ -152,7 +152,7 @@ impl Selection {
                     self.status = Status::ResizeLowerMargin;
                     true
                 }
-                _ => false,
+                MousePosInRect::Outside => false,
             },
             _ => false,
         }
@@ -242,7 +242,8 @@ impl Selection {
                 self.status = Status::Visible;
                 true
             }
-            _ => false,
+            Status::Visible => false,
+            Status::None => false,
         }
     }
     pub(crate) fn process_mouse_event(&mut self, evnt: &MouseEvent) -> bool {

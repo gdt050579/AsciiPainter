@@ -6,7 +6,7 @@ use appcui::prelude::*;
 
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents,
+#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents,
         commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
@@ -16,6 +16,10 @@ pub struct PainterWindow {
     rectangle_fore: Handle<ColorPicker>,
     rectangle_back: Handle<ColorPicker>,
     rectangle_line_type: Handle<Selector<LineType>>,
+    // fill rectangle
+    fill_fore: Handle<ColorPicker>,
+    fill_back: Handle<ColorPicker>,
+    fill_char: Handle<TextField>,
 }
 
 impl PainterWindow {
@@ -28,6 +32,9 @@ impl PainterWindow {
             rectangle_fore: Handle::None,
             rectangle_back: Handle::None,
             rectangle_line_type: Handle::None,
+            fill_fore: Handle::None,
+            fill_back: Handle::None,
+            fill_char: Handle::None,
         };
 
         let mut vs = vsplitter!("pos: 75%,d:c");
@@ -39,20 +46,20 @@ impl PainterWindow {
         // Rectangle panel
         let id = acc.add_panel("Rectandle");
         acc.add(id, label!("'Type:',x:1,y:1,w:5,h:1"));
-        w. rectangle_line_type = acc.add(id, selector!("LineType,l:7,t:1,r:1,value:Single"));
+        w.rectangle_line_type = acc.add(id, selector!("LineType,l:7,t:1,r:1,value:Single"));
         acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
         w.rectangle_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
-        w.rectangle_back =acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
+        w.rectangle_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
 
         // Filled rectangle panel
         let id = acc.add_panel("Filled Rectangle");
         acc.add(id, label!("'Char:',x:1,y:1,w:5,h:1"));
-        acc.add(id, textfield!("*,l:7,t:1,r:1"));
+        w.fill_char = acc.add(id, textfield!("*,l:7,t:1,r:1,flags:ProcessEnter"));
         acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
-        acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
+        w.fill_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
-        acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
+        w.fill_back = acc.add(id, colorpicker!("Black,l:7,t:5,r:1"));
 
         let mut p = PainterControl::new(100, 100);
         w.painter = vs.add(vsplitter::Panel::Left, p);
@@ -115,10 +122,15 @@ impl PainterWindow {
         let rect_fore = self.control(self.rectangle_fore).unwrap().color();
         let rect_line_type = self.control(self.rectangle_line_type).unwrap().value();
 
+        let fill_back = self.control(self.fill_back).unwrap().color();
+        let fill_fore = self.control(self.fill_fore).unwrap().color();
+        let fill_char = self.control(self.fill_char).unwrap().text().chars().next().unwrap_or(0 as char);
+
         // update all properties
         let h = self.painter;
         if let Some(p) = self.control_mut(h) {
             p.update_rectangle_properties(rect_fore, rect_back, rect_line_type);
+            p.update_fillrectangle_properties(fill_fore, fill_back, fill_char, CharFlags::None);
         }
     }
 }
@@ -168,6 +180,14 @@ impl AccordionEvents for PainterWindow {
                     line_type: LineType::Single,
                 },
             )),
+            2 => Some(DrawingObject::FillRectangle(
+                crate::drawing_object::FillRectangleObject {
+                    fore: Color::White,
+                    back: Color::Black,
+                    ch: ' ',
+                    flags: CharFlags::None,
+                },
+            )),
             _ => None,
         };
         if let Some(drawing_object) = d {
@@ -186,6 +206,13 @@ impl AccordionEvents for PainterWindow {
 
 impl ColorPickerEvents for PainterWindow {
     fn on_color_changed(&mut self, _: Handle<ColorPicker>, _: Color) -> EventProcessStatus {
+        self.update_proprties();
+        EventProcessStatus::Processed
+    }
+}
+
+impl TextFieldEvents for PainterWindow {
+    fn on_validate(&mut self, _: Handle<TextField>, _: &str) -> EventProcessStatus {
         self.update_proprties();
         EventProcessStatus::Processed
     }

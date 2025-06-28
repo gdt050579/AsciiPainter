@@ -63,6 +63,14 @@ impl PainterControl {
             rect.line_type = line_type;
         }
     }
+    pub fn update_fillrectangle_properties(&mut self, fore: Color, back: Color, ch: char, flags: CharFlags) {
+        if let DrawingObject::FillRectangle(ref mut fill_rect) = self.drawwing_object {
+            fill_rect.fore = fore;
+            fill_rect.back = back;
+            fill_rect.ch = ch;
+            fill_rect.flags = flags;
+        }
+    }
     pub fn write_current_object(&mut self) {
         if self.selection.is_visible() {
             self.drawwing_object
@@ -99,7 +107,6 @@ impl OnMouseEvent for PainterControl {
         match event {
             MouseEvent::Released(_) => {
                 self.write_current_object();
-                self.selection = Selection::new();
                 EventProcessStatus::Processed
             }
             _ => EventProcessStatus::Ignored,

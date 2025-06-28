@@ -96,6 +96,7 @@ fn main() -> Result<(), appcui::system::Error> {
     App::new()
         .desktop(PainterDesktop::new())
         .menu_bar()
+        //.log_file("log.txt", false)
         .build()?
         .run();
     Ok(())
