@@ -13,6 +13,11 @@ pub struct PainterControl {
     scrollbars: ScrollBars,
     selection: Selection,
     drawwing_object: DrawingObject,
+    is_move_dragging: bool,
+    move_drag_start: Point,
+    move_drag_initial_offset: Point,
+    undo_stack: Vec<Surface>,
+    max_undo_levels: usize,
 }
 
 impl PainterControl {
@@ -23,8 +28,19 @@ impl PainterControl {
             scrollbars: ScrollBars::new(true),
             selection: Selection::new(),
             drawwing_object: DrawingObject::Selection(SelectionObject::default()),
+            is_move_dragging: false,
+            move_drag_start: Point::new(0, 0),
+            move_drag_initial_offset: Point::new(0, 0),
+            undo_stack: Vec::new(),
+            max_undo_levels: 50,
         };
         me.set_components_toolbar_margins(3, 5);
+        me.scrollbars.resize(
+            me.surface.size().width as u64,
+            me.surface.size().height as u64,
+            &me.base,
+        );
+        me.save_state();
         me
     }
     pub fn from_path(path: &Path) -> Option<Self> {
@@ -35,8 +51,19 @@ impl PainterControl {
                 scrollbars: ScrollBars::new(true),
                 selection: Selection::new(),
                 drawwing_object: DrawingObject::Selection(SelectionObject::default()),
+                is_move_dragging: false,
+                move_drag_start: Point::new(0, 0),
+                move_drag_initial_offset: Point::new(0, 0),
+                undo_stack: Vec::new(),
+                max_undo_levels: 50,
             };
             me.set_components_toolbar_margins(3, 5);
+            me.scrollbars.resize(
+                me.surface.size().width as u64,
+                me.surface.size().height as u64,
+                &me.base,
+            );
+            me.save_state();
             Some(me)
         } else {
             None
@@ -124,6 +151,8 @@ impl PainterControl {
     }
     pub fn write_current_object(&mut self) {
         if self.selection.is_visible() {
+            self.save_state();
+
             self.drawwing_object
                 .paint(&mut self.surface, self.selection.rect());
             self.drawwing_object.clear();
@@ -134,6 +163,76 @@ impl PainterControl {
         if self.selection.is_visible() {
             self.drawwing_object.clear();
             self.selection = Selection::new();
+        }
+    }
+
+    pub fn save_state(&mut self) {
+        let size = self.surface.size();
+        let mut surface_copy = Surface::new(size.width, size.height);
+
+        for y in 0..size.height as i32 {
+            for x in 0..size.width as i32 {
+                if let Some(ch) = self.surface.char(x, y) {
+                    surface_copy.write_char(x, y, *ch);
+                }
+            }
+        }
+
+        self.undo_stack.push(surface_copy);
+
+        if self.undo_stack.len() > self.max_undo_levels {
+            self.undo_stack.remove(0);
+        }
+    }
+
+    pub fn undo(&mut self) -> bool {
+        if let Some(previous_surface) = self.undo_stack.pop() {
+            self.surface = previous_surface;
+            self.selection = Selection::new();
+            self.drawwing_object.clear();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn can_undo(&self) -> bool {
+        !self.undo_stack.is_empty()
+    }
+
+    fn adjust_mouse_event_for_scroll(&self, event: &MouseEvent) -> MouseEvent {
+        let offset = self.scrollbars.offset();
+        match event {
+            MouseEvent::Pressed(data) => {
+                // println!(
+                //     "Debug: Mouse pressed at ({}, {}), offset ({}, {}), adjusted to ({}, {})",
+                //     data.x,
+                //     data.y,
+                //     offset.x,
+                //     offset.y,
+                //     data.x - offset.x,
+                //     data.y - offset.y
+                // );
+                MouseEvent::Pressed(MouseEventData {
+                    x: data.x - offset.x,
+                    y: data.y - offset.y,
+                    button: data.button,
+                    modifier: data.modifier,
+                })
+            }
+            MouseEvent::Released(data) => MouseEvent::Released(MouseEventData {
+                x: data.x - offset.x,
+                y: data.y - offset.y,
+                button: data.button,
+                modifier: data.modifier,
+            }),
+            MouseEvent::Drag(data) => MouseEvent::Drag(MouseEventData {
+                x: data.x - offset.x,
+                y: data.y - offset.y,
+                button: data.button,
+                modifier: data.modifier,
+            }),
+            _ => *event,
         }
     }
 }
@@ -156,11 +255,50 @@ impl OnPaint for PainterControl {
 
 impl OnMouseEvent for PainterControl {
     fn on_mouse_event(&mut self, event: &MouseEvent) -> EventProcessStatus {
+        let is_move_mode = matches!(self.drawwing_object, DrawingObject::Move(_));
+
+        match event {
+            MouseEvent::Pressed(data) if is_move_mode => {
+                self.is_move_dragging = true;
+                self.move_drag_start = Point::new(data.x, data.y);
+                self.move_drag_initial_offset = Point::new(
+                    self.scrollbars.horizontal_index() as i32,
+                    self.scrollbars.vertical_index() as i32,
+                );
+                return EventProcessStatus::Processed;
+            }
+            MouseEvent::Drag(data) if self.is_move_dragging => {
+                let dx = self.move_drag_start.x - data.x;
+                let dy = self.move_drag_start.y - data.y;
+
+                let new_h_index = (self.move_drag_initial_offset.x + dx).max(0) as u64;
+                let new_v_index = (self.move_drag_initial_offset.y + dy).max(0) as u64;
+
+                self.scrollbars.set_indexes(new_h_index, new_v_index);
+                return EventProcessStatus::Processed;
+            }
+            MouseEvent::Released(_) if self.is_move_dragging => {
+                self.is_move_dragging = false;
+                return EventProcessStatus::Processed;
+            }
+            _ => {}
+        }
+
+        if self.is_move_dragging {
+            return EventProcessStatus::Processed;
+        }
+
         if self.scrollbars.process_mouse_event(event) {
             return EventProcessStatus::Processed;
         }
+
+        if is_move_mode {
+            return EventProcessStatus::Processed;
+        }
+
+        let adjusted_event = self.adjust_mouse_event_for_scroll(event);
         let during_creation = self.selection.is_during_creation();
-        if self.selection.process_mouse_event(event) {
+        if self.selection.process_mouse_event(&adjusted_event) {
             if during_creation && self.selection.is_visible() {
                 // tocmai am creat o selectie noua
                 self.drawwing_object
@@ -217,6 +355,13 @@ impl OnKeyPressed for PainterControl {
                 self.write_current_object();
                 EventProcessStatus::Processed
             }
+            key!("Ctrl+Z") => {
+                if self.undo() {
+                    EventProcessStatus::Processed
+                } else {
+                    EventProcessStatus::Ignored
+                }
+            }
             _ => EventProcessStatus::Ignored,
         }
     }
@@ -224,6 +369,10 @@ impl OnKeyPressed for PainterControl {
 
 impl OnResize for PainterControl {
     fn on_resize(&mut self, _old_size: Size, _new_size: Size) {
-        self.scrollbars.resize(100, 100, &self.base);
+        self.scrollbars.resize(
+            self.surface.size().width as u64,
+            self.surface.size().height as u64,
+            &self.base,
+        );
     }
 }

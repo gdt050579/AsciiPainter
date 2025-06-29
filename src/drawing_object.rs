@@ -81,8 +81,12 @@ impl Default for SelectionObject {
     }
 }
 
+#[derive(Default)]
+pub struct MoveObject {}
+
 pub enum DrawingObject {
     Selection(SelectionObject),
+    Move(MoveObject),
     Rectangle(RectangleObject),
     FillRectangle(FillRectangleObject),
     Line(LineObject),
@@ -96,12 +100,13 @@ impl DrawingObject {
                 sel.img = None;
                 sel.start_point = Point::new(0, 0);
             }
-            DrawingObject::Rectangle(rect) => {}
-            DrawingObject::FillRectangle(fill_rect) => {}
-            DrawingObject::Line(line) => {}
+            DrawingObject::Rectangle(_) => {}
+            DrawingObject::FillRectangle(_) => {}
+            DrawingObject::Line(_) => {}
             DrawingObject::Text(text) => {
                 text.txt.clear();
             }
+            DrawingObject::Move(_) => {}
         }
     }
     pub fn on_finish_selection(&mut self, surface: &Surface, rect: Rect) {
@@ -121,10 +126,8 @@ impl DrawingObject {
             DrawingObject::Rectangle(_)
             | DrawingObject::FillRectangle(_)
             | DrawingObject::Line(_)
-            | DrawingObject::Text(_) => {
-                // No action needed for other types
-            }
-            _ => {}
+            | DrawingObject::Text(_)
+            | DrawingObject::Move(_) => {}
         }
     }
     pub fn paint(&self, surface: &mut Surface, rect: Rect) {
@@ -192,6 +195,7 @@ impl DrawingObject {
                     .build();
                 surface.write_text(&text.txt, &tf);
             }
+            DrawingObject::Move(_) => {}
         }
     }
 }
