@@ -12,7 +12,7 @@ use appcui::prelude::*;
 
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents +RadioBoxEvents,
+#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents + RadioBoxEvents,
         commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
@@ -303,7 +303,8 @@ impl SelectorEvents<LineType> for PainterWindow {
 }
 
 impl ButtonEvents for PainterWindow {
-    fn on_pressed(&mut self, handle: Handle<Button>) -> EventProcessStatus {
+    fn on_pressed(&mut self, _handle: Handle<Button>) -> EventProcessStatus {
         EventProcessStatus::Ignored
     }
 }
+

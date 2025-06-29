@@ -17,6 +17,7 @@ pub struct PainterControl {
     move_drag_start: Point,
     move_drag_initial_offset: Point,
     undo_stack: Vec<Surface>,
+    redo_stack: Vec<Surface>,
     max_undo_levels: usize,
 }
 
@@ -32,6 +33,7 @@ impl PainterControl {
             move_drag_start: Point::new(0, 0),
             move_drag_initial_offset: Point::new(0, 0),
             undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
             max_undo_levels: 50,
         };
         me.set_components_toolbar_margins(3, 5);
@@ -55,6 +57,7 @@ impl PainterControl {
                 move_drag_start: Point::new(0, 0),
                 move_drag_initial_offset: Point::new(0, 0),
                 undo_stack: Vec::new(),
+                redo_stack: Vec::new(),
                 max_undo_levels: 50,
             };
             me.set_components_toolbar_margins(3, 5);
@@ -179,6 +182,7 @@ impl PainterControl {
         }
 
         self.undo_stack.push(surface_copy);
+        self.redo_stack.clear();
 
         if self.undo_stack.len() > self.max_undo_levels {
             self.undo_stack.remove(0);
@@ -187,7 +191,52 @@ impl PainterControl {
 
     pub fn undo(&mut self) -> bool {
         if let Some(previous_surface) = self.undo_stack.pop() {
+            let size = self.surface.size();
+            let mut current_surface_copy = Surface::new(size.width, size.height);
+
+            for y in 0..size.height as i32 {
+                for x in 0..size.width as i32 {
+                    if let Some(ch) = self.surface.char(x, y) {
+                        current_surface_copy.write_char(x, y, *ch);
+                    }
+                }
+            }
+
+            self.redo_stack.push(current_surface_copy);
+
+            if self.redo_stack.len() > self.max_undo_levels {
+                self.redo_stack.remove(0);
+            }
+
             self.surface = previous_surface;
+            self.selection = Selection::new();
+            self.drawwing_object.clear();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn redo(&mut self) -> bool {
+        if let Some(next_surface) = self.redo_stack.pop() {
+            let size = self.surface.size();
+            let mut current_surface_copy = Surface::new(size.width, size.height);
+
+            for y in 0..size.height as i32 {
+                for x in 0..size.width as i32 {
+                    if let Some(ch) = self.surface.char(x, y) {
+                        current_surface_copy.write_char(x, y, *ch);
+                    }
+                }
+            }
+
+            self.undo_stack.push(current_surface_copy);
+
+            if self.undo_stack.len() > self.max_undo_levels {
+                self.undo_stack.remove(0);
+            }
+
+            self.surface = next_surface;
             self.selection = Selection::new();
             self.drawwing_object.clear();
             true
@@ -200,26 +249,19 @@ impl PainterControl {
         !self.undo_stack.is_empty()
     }
 
+    pub fn can_redo(&self) -> bool {
+        !self.redo_stack.is_empty()
+    }
+
     fn adjust_mouse_event_for_scroll(&self, event: &MouseEvent) -> MouseEvent {
         let offset = self.scrollbars.offset();
         match event {
-            MouseEvent::Pressed(data) => {
-                // println!(
-                //     "Debug: Mouse pressed at ({}, {}), offset ({}, {}), adjusted to ({}, {})",
-                //     data.x,
-                //     data.y,
-                //     offset.x,
-                //     offset.y,
-                //     data.x - offset.x,
-                //     data.y - offset.y
-                // );
-                MouseEvent::Pressed(MouseEventData {
-                    x: data.x - offset.x,
-                    y: data.y - offset.y,
-                    button: data.button,
-                    modifier: data.modifier,
-                })
-            }
+            MouseEvent::Pressed(data) => MouseEvent::Pressed(MouseEventData {
+                x: data.x - offset.x,
+                y: data.y - offset.y,
+                button: data.button,
+                modifier: data.modifier,
+            }),
             MouseEvent::Released(data) => MouseEvent::Released(MouseEventData {
                 x: data.x - offset.x,
                 y: data.y - offset.y,
@@ -357,6 +399,20 @@ impl OnKeyPressed for PainterControl {
             }
             key!("Ctrl+Z") => {
                 if self.undo() {
+                    EventProcessStatus::Processed
+                } else {
+                    EventProcessStatus::Ignored
+                }
+            }
+            key!("Ctrl+Shift+Z") => {
+                if self.redo() {
+                    EventProcessStatus::Processed
+                } else {
+                    EventProcessStatus::Ignored
+                }
+            }
+            key!("Ctrl+Y") => {
+                if self.redo() {
                     EventProcessStatus::Processed
                 } else {
                     EventProcessStatus::Ignored
