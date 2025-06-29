@@ -105,7 +105,15 @@ impl PainterWindow {
         //w.text_content = acc.add(id, textfield!("'',l:1,t:5,r:1,b:0,flags:ProcessEnter"));
 
 
-        let mut p = PainterControl::new(100, 100);
+        let p = if let Some(path) = path {
+            if let Some(p) = PainterControl::from_path(path) {
+                p
+            } else {
+                PainterControl::new(100, 100)
+            }
+        } else {
+            PainterControl::new(100, 100)
+        };
         w.painter = vs.add(vsplitter::Panel::Left, p);
         w.acc = vs.add(vsplitter::Panel::Right, acc);
         w.add(vs);

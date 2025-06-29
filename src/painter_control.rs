@@ -27,6 +27,21 @@ impl PainterControl {
         me.set_components_toolbar_margins(3, 5);
         me
     }
+    pub fn from_path(path: &Path) -> Option<Self> {
+        if let Ok(surface) = Surface::from_file(path) {
+            let mut me = Self {
+                base: ControlBase::with_focus_overlay(Layout::new("d:c")),
+                surface,
+                scrollbars: ScrollBars::new(true),
+                selection: Selection::new(),
+                drawwing_object: DrawingObject::Selection(SelectionObject::default()),
+            };
+            me.set_components_toolbar_margins(3, 5);
+            Some(me)
+        } else {
+            None
+        }
+    }
 
     pub fn clear_surface(&mut self) {
         self.surface.clear(char!("' ',black,black"));
