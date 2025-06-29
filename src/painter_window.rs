@@ -5,6 +5,7 @@ use crate::drawing_object::RectangleObject;
 use crate::drawing_object::FillRectangleObject;
 use crate::drawing_object::LineObject;
 use crate::drawing_object::TextObject;
+use crate::drawing_object::SelectionObject;
 use appcui::graphics::LineType;
 use appcui::prelude::*;
 
@@ -230,7 +231,7 @@ impl AccordionEvents for PainterWindow {
         _: u32,
     ) -> EventProcessStatus {
         let d = match new_panel_index {
-            0 => Some(DrawingObject::Selection),
+            0 => Some(DrawingObject::Selection(SelectionObject::default())),
             1 => Some(DrawingObject::Rectangle(RectangleObject::default())),
             2 => Some(DrawingObject::FillRectangle(FillRectangleObject::default())),
             3 => Some(DrawingObject::Line(LineObject::default())),

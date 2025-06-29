@@ -45,6 +45,9 @@ impl Selection {
     pub(crate) fn is_visible(&self) -> bool {
         !matches!(self.status, Status::None)
     }
+    pub(crate) fn is_during_creation(&self) -> bool {
+        matches!(self.status, Status::DuringCreation)
+    }
     pub(crate) fn rect(&self) -> Rect {
         Rect::new(
             self.r.left() + 1,

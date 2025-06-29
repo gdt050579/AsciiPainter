@@ -68,8 +68,21 @@ impl Default for TextObject {
     }
 }
 
+pub struct SelectionObject {
+    img: Option<Surface>,
+    start_point: Point,
+}
+impl Default for SelectionObject {
+    fn default() -> Self {
+        Self {
+            img: None,
+            start_point: Point::new(0, 0),
+        }
+    }
+}
+
 pub enum DrawingObject {
-    Selection,
+    Selection(SelectionObject),
     Rectangle(RectangleObject),
     FillRectangle(FillRectangleObject),
     Line(LineObject),
@@ -77,9 +90,63 @@ pub enum DrawingObject {
 }
 
 impl DrawingObject {
+    pub fn clear(&mut self) {
+        match self {
+            DrawingObject::Selection(sel) => {
+                sel.img = None;
+                sel.start_point = Point::new(0, 0);
+            }
+            DrawingObject::Rectangle(rect) => {}
+            DrawingObject::FillRectangle(fill_rect) => {}
+            DrawingObject::Line(line) => {}
+            DrawingObject::Text(text) => {
+                text.txt.clear();
+            }
+        }
+    }
+    pub fn on_finish_selection(&mut self, surface: &Surface, rect: Rect) {
+        match self {
+            DrawingObject::Selection(sel) => {
+                let mut s = Surface::new(rect.width(), rect.height());
+                for y in 0..rect.height() as i32 {
+                    for x in 0..rect.width() as i32 {
+                        if let Some(ch) = surface.char(rect.left() + x, rect.top() + y) {
+                            s.write_char(x, y, *ch);
+                        }
+                    }
+                }
+                sel.img = Some(s);
+                sel.start_point = Point::new(rect.left(), rect.top());
+            }
+            DrawingObject::Rectangle(_)
+            | DrawingObject::FillRectangle(_)
+            | DrawingObject::Line(_)
+            | DrawingObject::Text(_) => {
+                // No action needed for other types
+            }
+            _ => {}
+        }
+    }
     pub fn paint(&self, surface: &mut Surface, rect: Rect) {
         match self {
-            DrawingObject::Selection => {}
+            DrawingObject::Selection(sel) => {
+                if let Some(img) = &sel.img {
+                    let r = Rect::with_point_and_size(
+                        sel.start_point,
+                        Size::new(rect.width(), rect.height()),
+                    );
+                    surface.fill_rect(
+                        r,
+                        Character::new(
+                            ' ',
+                            Color::Transparent,
+                            Color::Transparent,
+                            CharFlags::None,
+                        ),
+                    );
+                    surface.draw_surface(rect.left(), rect.top(), img);
+                }
+            }
             DrawingObject::Rectangle(rectangle) => {
                 surface.draw_rect(
                     rect,
@@ -120,7 +187,7 @@ impl DrawingObject {
             DrawingObject::Text(text) => {
                 let tf = TextFormatBuilder::new()
                     .position(rect.left(), rect.top())
-                    .attribute(CharAttribute::new(text.fore,text.back,text.flags))
+                    .attribute(CharAttribute::new(text.fore, text.back, text.flags))
                     .wrap_type(WrapType::WordWrap(rect.width() as u16))
                     .build();
                 surface.write_text(&text.txt, &tf);

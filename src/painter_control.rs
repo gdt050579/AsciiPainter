@@ -2,6 +2,8 @@ use std::path::Path;
 
 use appcui::prelude::*;
 
+use crate::drawing_object::SelectionObject;
+
 use super::DrawingObject;
 use super::Selection;
 
@@ -20,7 +22,7 @@ impl PainterControl {
             surface: Surface::new(width, height),
             scrollbars: ScrollBars::new(true),
             selection: Selection::new(),
-            drawwing_object: DrawingObject::Selection,
+            drawwing_object: DrawingObject::Selection(SelectionObject::default()),
         };
         me.set_components_toolbar_margins(3, 5);
         me
@@ -63,7 +65,13 @@ impl PainterControl {
             rect.line_type = line_type;
         }
     }
-    pub fn update_fillrectangle_properties(&mut self, fore: Color, back: Color, ch: char, flags: CharFlags) {
+    pub fn update_fillrectangle_properties(
+        &mut self,
+        fore: Color,
+        back: Color,
+        ch: char,
+        flags: CharFlags,
+    ) {
         if let DrawingObject::FillRectangle(ref mut fill_rect) = self.drawwing_object {
             fill_rect.fore = fore;
             fill_rect.back = back;
@@ -71,7 +79,13 @@ impl PainterControl {
             fill_rect.flags = flags;
         }
     }
-    pub fn update_line_properties(&mut self, fore: Color, back: Color, line_type: LineType, vertical: bool) {
+    pub fn update_line_properties(
+        &mut self,
+        fore: Color,
+        back: Color,
+        line_type: LineType,
+        vertical: bool,
+    ) {
         if let DrawingObject::Line(ref mut line) = self.drawwing_object {
             line.fore = fore;
             line.back = back;
@@ -79,7 +93,13 @@ impl PainterControl {
             line.vertical = vertical;
         }
     }
-    pub fn update_text_properties(&mut self, txt: String, fore: Color, back: Color, flags: CharFlags) {
+    pub fn update_text_properties(
+        &mut self,
+        txt: String,
+        fore: Color,
+        back: Color,
+        flags: CharFlags,
+    ) {
         if let DrawingObject::Text(ref mut text) = self.drawwing_object {
             text.txt = txt;
             text.fore = fore;
@@ -91,6 +111,7 @@ impl PainterControl {
         if self.selection.is_visible() {
             self.drawwing_object
                 .paint(&mut self.surface, self.selection.rect());
+            self.drawwing_object.clear();
             self.selection = Selection::new();
         }
     }
@@ -117,7 +138,13 @@ impl OnMouseEvent for PainterControl {
         if self.scrollbars.process_mouse_event(event) {
             return EventProcessStatus::Processed;
         }
+        let during_creation = self.selection.is_during_creation();
         if self.selection.process_mouse_event(event) {
+            if during_creation && self.selection.is_visible() {
+                // tocmai am creat o selectie noua
+                self.drawwing_object
+                    .on_finish_selection(&self.surface, self.selection.rect());
+            }
             return EventProcessStatus::Processed;
         }
         match event {
