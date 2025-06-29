@@ -115,6 +115,12 @@ impl PainterControl {
             self.selection = Selection::new();
         }
     }
+    pub fn cancel_selection(&mut self) {
+        if self.selection.is_visible() {
+            self.drawwing_object.clear();
+            self.selection = Selection::new();
+        }
+    }
 }
 
 impl OnPaint for PainterControl {
@@ -186,6 +192,14 @@ impl OnKeyPressed for PainterControl {
                     self.scrollbars.horizontal_index() + 1,
                     self.scrollbars.vertical_index(),
                 );
+                EventProcessStatus::Processed
+            }
+            key!("Escape") => {
+                self.cancel_selection();
+                EventProcessStatus::Processed
+            }
+            key!("Enter") => {
+                self.write_current_object();
                 EventProcessStatus::Processed
             }
             _ => EventProcessStatus::Ignored,

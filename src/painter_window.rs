@@ -101,7 +101,7 @@ impl PainterWindow {
         w.text_fore = acc.add(id, colorpicker!("White,l:7,t:1,r:1"));
         acc.add(id, label!("'Back:',x:1,y:3,w:5,h:1"));
         w.text_back = acc.add(id, colorpicker!("Black,l:7,t:3,r:1"));
-        w.text_content = acc.add(id, textarea!("'Hello',l:1,t:5,r:1,b:0,flags:HighlightCursor"));
+        w.text_content = acc.add(id, textarea!("'Hello',l:1,t:5,r:1,b:0,flags:ShowLineNumber"));
         //w.text_content = acc.add(id, textfield!("'',l:1,t:5,r:1,b:0,flags:ProcessEnter"));
 
 
