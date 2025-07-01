@@ -290,6 +290,12 @@ impl TextFieldEvents for PainterWindow {
         self.update_proprties();
         EventProcessStatus::Processed
     }
+    
+    fn on_text_changed(&mut self, _handle: Handle<TextField>) -> EventProcessStatus {
+        self.update_proprties();
+        EventProcessStatus::Processed
+    }
+    
 }
 impl SelectorEvents<LineType> for PainterWindow {
     fn on_selection_changed(
