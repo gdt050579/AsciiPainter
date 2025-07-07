@@ -19,6 +19,7 @@ pub struct PainterControl {
     undo_stack: Vec<Surface>,
     redo_stack: Vec<Surface>,
     max_undo_levels: usize,
+    clipboard: Option<Surface>,
 }
 
 impl PainterControl {
@@ -35,6 +36,7 @@ impl PainterControl {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             max_undo_levels: 50,
+            clipboard: None,
         };
         me.set_components_toolbar_margins(3, 5);
         me.scrollbars.resize(
@@ -59,6 +61,7 @@ impl PainterControl {
                 undo_stack: Vec::new(),
                 redo_stack: Vec::new(),
                 max_undo_levels: 50,
+                clipboard: None,
             };
             me.set_components_toolbar_margins(3, 5);
             me.scrollbars.resize(
@@ -253,6 +256,69 @@ impl PainterControl {
         !self.redo_stack.is_empty()
     }
 
+    pub fn copy_selection(&mut self) {
+        if self.selection.is_visible()
+            && matches!(self.drawwing_object, DrawingObject::Selection(_))
+        {
+            let rect = self.selection.rect();
+            let mut clipboard_surface = Surface::new(rect.width(), rect.height());
+
+            for y in 0..rect.height() as i32 {
+                for x in 0..rect.width() as i32 {
+                    if let Some(ch) = self.surface.char(rect.left() + x, rect.top() + y) {
+                        clipboard_surface.write_char(x, y, *ch);
+                    }
+                }
+            }
+
+            self.clipboard = Some(clipboard_surface);
+        }
+    }
+
+    pub fn paste_from_clipboard(&mut self) {
+        if self.clipboard.is_none() || !self.selection.is_visible() {
+            return;
+        }
+
+        self.save_state();
+        let rect = self.selection.rect();
+
+        // Get clipboard dimensions first
+        let (clipboard_width, clipboard_height) = if let Some(clipboard_surface) = &self.clipboard {
+            (
+                clipboard_surface.size().width,
+                clipboard_surface.size().height,
+            )
+        } else {
+            return;
+        };
+
+        // Paste the clipboard content at the selection position
+        for y in 0..clipboard_height as i32 {
+            for x in 0..clipboard_width as i32 {
+                let target_x = rect.left() + x;
+                let target_y = rect.top() + y;
+
+                // Check bounds
+                if target_x >= 0
+                    && target_y >= 0
+                    && target_x < self.surface.size().width as i32
+                    && target_y < self.surface.size().height as i32
+                {
+                    if let Some(clipboard_surface) = &self.clipboard {
+                        if let Some(ch) = clipboard_surface.char(x, y) {
+                            self.surface.write_char(target_x, target_y, *ch);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Clear the selection after pasting
+        self.selection = Selection::new();
+        self.drawwing_object.clear();
+    }
+
     fn adjust_mouse_event_for_scroll(&self, event: &MouseEvent) -> MouseEvent {
         let offset = self.scrollbars.offset();
         match event {
@@ -413,6 +479,24 @@ impl OnKeyPressed for PainterControl {
             }
             key!("Ctrl+Y") => {
                 if self.redo() {
+                    EventProcessStatus::Processed
+                } else {
+                    EventProcessStatus::Ignored
+                }
+            }
+            key!("Ctrl+C") => {
+                if self.selection.is_visible()
+                    && matches!(self.drawwing_object, DrawingObject::Selection(_))
+                {
+                    self.copy_selection();
+                    EventProcessStatus::Processed
+                } else {
+                    EventProcessStatus::Ignored
+                }
+            }
+            key!("Ctrl+V") => {
+                if self.clipboard.is_some() && self.selection.is_visible() {
+                    self.paste_from_clipboard();
                     EventProcessStatus::Processed
                 } else {
                     EventProcessStatus::Ignored
