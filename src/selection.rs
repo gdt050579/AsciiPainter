@@ -32,15 +32,22 @@ pub struct Selection {
     r: Rect,
     status: Status,
     start_point: Point,
+    allow_resize: bool,
 }
 
 impl Selection {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(allow_resize: bool) -> Self {
         Self {
             r: Rect::new(0, 0, 0, 0),
             status: Status::None,
             start_point: Point::new(0, 0),
+            allow_resize,
         }
+    }
+    pub(crate) fn reset(&mut self) {
+        self.r = Rect::new(0, 0, 0, 0);
+        self.status = Status::None;
+        self.start_point = Point::ORIGIN;
     }
     pub(crate) fn is_visible(&self) -> bool {
         !matches!(self.status, Status::None)
@@ -61,8 +68,7 @@ impl Selection {
         if self.is_during_creation() {
             for x in r.left()..=r.right() {
                 for y in r.top()..=r.bottom() {
-                    if let Some(c) = surface.char(x, y)
-                    {
+                    if let Some(c) = surface.char(x, y) {
                         let mut new_c = c.clone();
                         new_c.background = c.background.inverse_color();
                         new_c.foreground = c.foreground.inverse_color();
@@ -82,14 +88,17 @@ impl Selection {
             surface.fill_horizontal_line(r.left(), r.bottom(), r.right(), ch);
             surface.fill_vertical_line(r.left(), r.top(), r.bottom(), ch);
             surface.fill_vertical_line(r.right(), r.top(), r.bottom(), ch);
-            surface.write_char(r.left(), r.top(), marker);
-            surface.write_char(r.left(), r.bottom(), marker);
-            surface.write_char(r.right(), r.top(), marker);
-            surface.write_char(r.right(), r.bottom(), marker);
-            surface.write_char(r.center_x(), r.top(), marker);
-            surface.write_char(r.center_x(), r.bottom(), marker);
-            surface.write_char(r.left(), r.center_y(), marker);
-            surface.write_char(r.right(), r.center_y(), marker);
+            // markeri
+            if self.allow_resize {
+                surface.write_char(r.left(), r.top(), marker);
+                surface.write_char(r.left(), r.bottom(), marker);
+                surface.write_char(r.right(), r.top(), marker);
+                surface.write_char(r.right(), r.bottom(), marker);
+                surface.write_char(r.center_x(), r.top(), marker);
+                surface.write_char(r.center_x(), r.bottom(), marker);
+                surface.write_char(r.left(), r.center_y(), marker);
+                surface.write_char(r.right(), r.center_y(), marker);
+            }
         }
     }
     fn mouse_pos_in_rect(&self, point: Point) -> MousePosInRect {
@@ -99,22 +108,26 @@ impl Selection {
             && point.y >= r.top()
             && point.y <= r.bottom()
         {
-            if point.x == r.left() && point.y == r.top() {
-                MousePosInRect::TopLeft
-            } else if point.x == r.right() && point.y == r.top() {
-                MousePosInRect::TopRight
-            } else if point.x == r.left() && point.y == r.bottom() {
-                MousePosInRect::BottomLeft
-            } else if point.x == r.right() && point.y == r.bottom() {
-                MousePosInRect::BottomRight
-            } else if point.x == r.center_x() && point.y == r.top() {
-                MousePosInRect::TopMargin
-            } else if point.x == r.center_x() && point.y == r.bottom() {
-                MousePosInRect::BottomMargin
-            } else if point.y == r.center_y() && point.x == r.left() {
-                MousePosInRect::LeftMargin
-            } else if point.y == r.center_y() && point.x == r.right() {
-                MousePosInRect::RightMargin
+            if self.allow_resize {
+                if point.x == r.left() && point.y == r.top() {
+                    MousePosInRect::TopLeft
+                } else if point.x == r.right() && point.y == r.top() {
+                    MousePosInRect::TopRight
+                } else if point.x == r.left() && point.y == r.bottom() {
+                    MousePosInRect::BottomLeft
+                } else if point.x == r.right() && point.y == r.bottom() {
+                    MousePosInRect::BottomRight
+                } else if point.x == r.center_x() && point.y == r.top() {
+                    MousePosInRect::TopMargin
+                } else if point.x == r.center_x() && point.y == r.bottom() {
+                    MousePosInRect::BottomMargin
+                } else if point.y == r.center_y() && point.x == r.left() {
+                    MousePosInRect::LeftMargin
+                } else if point.y == r.center_y() && point.x == r.right() {
+                    MousePosInRect::RightMargin
+                } else {
+                    MousePosInRect::Inside
+                }
             } else {
                 MousePosInRect::Inside
             }

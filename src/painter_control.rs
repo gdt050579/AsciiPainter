@@ -28,7 +28,7 @@ impl PainterControl {
             base: ControlBase::with_focus_overlay(Layout::new("d:c")),
             surface: Surface::new(width, height),
             scrollbars: ScrollBars::new(true),
-            selection: Selection::new(),
+            selection: Selection::new(true),
             drawwing_object: DrawingObject::Selection(SelectionObject::default()),
             is_move_dragging: false,
             move_drag_start: Point::new(0, 0),
@@ -53,7 +53,7 @@ impl PainterControl {
                 base: ControlBase::with_focus_overlay(Layout::new("d:c")),
                 surface,
                 scrollbars: ScrollBars::new(true),
-                selection: Selection::new(),
+                selection: Selection::new(true),
                 drawwing_object: DrawingObject::Selection(SelectionObject::default()),
                 is_move_dragging: false,
                 move_drag_start: Point::new(0, 0),
@@ -103,7 +103,8 @@ impl PainterControl {
             .map_err(|e| format!("Failed to save surface to file '{}': {}", path.display(), e))
     }
     pub fn reset(&mut self, d: DrawingObject) {
-        self.selection = Selection::new();
+        let is_selecton = matches!(d, DrawingObject::Selection(_));
+        self.selection = Selection::new(!is_selecton);
         self.drawwing_object = d;
     }
     pub fn update_rectangle_properties(&mut self, fore: Color, back: Color, line_type: LineType) {
@@ -162,13 +163,13 @@ impl PainterControl {
             self.drawwing_object
                 .paint(&mut self.surface, self.selection.rect());
             self.drawwing_object.clear();
-            self.selection = Selection::new();
+            self.selection.reset();
         }
     }
     pub fn cancel_selection(&mut self) {
         if self.selection.is_visible() {
             self.drawwing_object.clear();
-            self.selection = Selection::new();
+            self.selection.reset();
         }
     }
 
@@ -212,7 +213,7 @@ impl PainterControl {
             }
 
             self.surface = previous_surface;
-            self.selection = Selection::new();
+            self.selection.reset();
             self.drawwing_object.clear();
             true
         } else {
@@ -240,7 +241,7 @@ impl PainterControl {
             }
 
             self.surface = next_surface;
-            self.selection = Selection::new();
+            self.selection.reset();
             self.drawwing_object.clear();
             true
         } else {
@@ -315,7 +316,7 @@ impl PainterControl {
         }
 
         // Clear the selection after pasting
-        self.selection = Selection::new();
+        self.selection.reset();
         self.drawwing_object.clear();
     }
 
