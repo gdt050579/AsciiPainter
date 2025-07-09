@@ -216,7 +216,7 @@ impl PainterWindow {
 
 impl MenuEvents for PainterWindow {
     fn on_update_menubar(&self, menubar: &mut MenuBar) {
-        menubar.add(self.menu);
+        menubar.add(self.menu, 0);
     }
 
     fn on_command(
