@@ -86,7 +86,7 @@ impl MenuEvents for PainterDesktop {
 
 fn main() -> Result<(), appcui::system::Error> {
     #[cfg(target_os = "windows")]
-    App::with_backend(appcui::backend::Type::WindowsVT)
+    App::with_backend(appcui::backend::Type::WindowsConsole)
         .desktop(PainterDesktop::new())
         .menu_bar()
         .build()?

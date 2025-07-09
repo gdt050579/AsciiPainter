@@ -58,25 +58,39 @@ impl Selection {
     }
     pub(crate) fn paint(&self, surface: &mut Surface, theme: &Theme) {
         let r = self.r;
-        let ch = char!(".,gray,black");
-        let marker = Character::new(
-            SpecialChar::BlockCentered,
-            Color::Yellow,
-            Color::Black,
-            CharFlags::None,
-        );
-        surface.fill_horizontal_line(r.left(), r.top(), r.right(), ch);
-        surface.fill_horizontal_line(r.left(), r.bottom(), r.right(), ch);
-        surface.fill_vertical_line(r.left(), r.top(), r.bottom(), ch);
-        surface.fill_vertical_line(r.right(), r.top(), r.bottom(), ch);
-        surface.write_char(r.left(), r.top(), marker);
-        surface.write_char(r.left(), r.bottom(), marker);
-        surface.write_char(r.right(), r.top(), marker);
-        surface.write_char(r.right(), r.bottom(), marker);
-        surface.write_char(r.center_x(), r.top(), marker);
-        surface.write_char(r.center_x(), r.bottom(), marker);
-        surface.write_char(r.left(), r.center_y(), marker);
-        surface.write_char(r.right(), r.center_y(), marker);
+        if self.is_during_creation() {
+            for x in r.left()..=r.right() {
+                for y in r.top()..=r.bottom() {
+                    if let Some(c) = surface.char(x, y)
+                    {
+                        let mut new_c = c.clone();
+                        new_c.background = c.background.inverse_color();
+                        new_c.foreground = c.foreground.inverse_color();
+                        surface.write_char(x, y, new_c);
+                    }
+                }
+            }
+        } else {
+            let ch = char!(".,gray,black");
+            let marker = Character::new(
+                SpecialChar::BlockCentered,
+                Color::Yellow,
+                Color::Black,
+                CharFlags::None,
+            );
+            surface.fill_horizontal_line(r.left(), r.top(), r.right(), ch);
+            surface.fill_horizontal_line(r.left(), r.bottom(), r.right(), ch);
+            surface.fill_vertical_line(r.left(), r.top(), r.bottom(), ch);
+            surface.fill_vertical_line(r.right(), r.top(), r.bottom(), ch);
+            surface.write_char(r.left(), r.top(), marker);
+            surface.write_char(r.left(), r.bottom(), marker);
+            surface.write_char(r.right(), r.top(), marker);
+            surface.write_char(r.right(), r.bottom(), marker);
+            surface.write_char(r.center_x(), r.top(), marker);
+            surface.write_char(r.center_x(), r.bottom(), marker);
+            surface.write_char(r.left(), r.center_y(), marker);
+            surface.write_char(r.right(), r.center_y(), marker);
+        }
     }
     fn mouse_pos_in_rect(&self, point: Point) -> MousePosInRect {
         let r = self.r;

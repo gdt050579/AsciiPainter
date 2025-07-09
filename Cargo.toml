@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-appcui = { version =  "0.1.8", features = ["TRUE_COLORS"] }
+appcui = { version =  "0.1.8" }
