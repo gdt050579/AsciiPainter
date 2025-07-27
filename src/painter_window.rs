@@ -41,7 +41,7 @@ pub struct PainterWindow {
 impl PainterWindow {
     fn inner_new(name: &str, path: Option<&Path>) -> Result<Self, String> {
         let mut w = Self {
-            base: Window::new(name, Layout::new("d:c,w:60,h:20"), window::Flags::Sizeable),
+            base: Window::new(name, layout!("a:c,w:60,h:20"), window::Flags::Sizeable),
             tmp_string: String::with_capacity(1024),
             painter: Handle::None,
             acc: Handle::None,
@@ -61,8 +61,8 @@ impl PainterWindow {
             text_content: Handle::None,
         };
 
-        let mut vs = vsplitter!("pos: 90%,d:c");
-        let mut acc = accordion!("d:c,w:100%,h:100%");
+        let mut vs = vsplitter!("pos: 90%,d:f");
+        let mut acc = accordion!("d:f");
 
         // Selection panel
         let id = acc.add_panel("Selection");

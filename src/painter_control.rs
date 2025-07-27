@@ -25,7 +25,7 @@ pub struct PainterControl {
 impl PainterControl {
     pub fn new(width: u32, height: u32) -> Self {
         let mut me = Self {
-            base: ControlBase::with_focus_overlay(Layout::new("d:c")),
+            base: ControlBase::with_focus_overlay(Layout::fill()),
             surface: Surface::new(width, height),
             scrollbars: ScrollBars::new(true),
             selection: Selection::new(true),
@@ -50,7 +50,7 @@ impl PainterControl {
     pub fn from_path(path: &Path) -> Option<Self> {
         if let Ok(surface) = Surface::from_file(path) {
             let mut me = Self {
-                base: ControlBase::with_focus_overlay(Layout::new("d:c")),
+                base: ControlBase::with_focus_overlay(Layout::fill()),
                 surface,
                 scrollbars: ScrollBars::new(true),
                 selection: Selection::new(true),
