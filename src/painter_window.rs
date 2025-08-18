@@ -12,7 +12,7 @@ use appcui::prelude::*;
 
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + TextFieldEvents +RadioBoxEvents,
+#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + CharPickerEvents + RadioBoxEvents,
         commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
@@ -26,7 +26,7 @@ pub struct PainterWindow {
     // fill rectangle
     fill_fore: Handle<ColorPicker>,
     fill_back: Handle<ColorPicker>,
-    fill_char: Handle<TextField>,
+    fill_char: Handle<CharPicker>,
     // line
     line_fore: Handle<ColorPicker>,
     line_back: Handle<ColorPicker>,
@@ -82,7 +82,7 @@ impl PainterWindow {
         // Filled rectangle panel
         let id = acc.add_panel("Filled Rectangle");
         acc.add(id, label!("'Char:',x:1,y:1,w:5,h:1"));
-        w.fill_char = acc.add(id, textfield!("*,l:7,t:1,r:1,flags:ProcessEnter"));
+        w.fill_char = acc.add(id, charpicker!("*,l:7,t:1,r:1,sets:[*]"));
         acc.add(id, label!("'Fore:',x:1,y:3,w:5,h:1"));
         w.fill_fore = acc.add(id, colorpicker!("White,l:7,t:3,r:1"));
         acc.add(id, label!("'Back:',x:1,y:5,w:5,h:1"));
@@ -187,9 +187,7 @@ impl PainterWindow {
         let fill_char = self
             .control(self.fill_char)
             .unwrap()
-            .text()
-            .chars()
-            .next()
+            .char()
             .unwrap_or(0 as char);
 
         // line
@@ -285,17 +283,11 @@ impl RadioBoxEvents for PainterWindow {
         EventProcessStatus::Processed
     }
 }
-impl TextFieldEvents for PainterWindow {
-    fn on_validate(&mut self, _: Handle<TextField>, _: &str) -> EventProcessStatus {
+impl CharPickerEvents for PainterWindow {
+    fn on_char_changed(&mut self, _: Handle<CharPicker>, _: Option<char>) -> EventProcessStatus {
         self.update_proprties();
         EventProcessStatus::Processed
     }
-    
-    fn on_text_changed(&mut self, _handle: Handle<TextField>) -> EventProcessStatus {
-        self.update_proprties();
-        EventProcessStatus::Processed
-    }
-    
 }
 impl SelectorEvents<LineType> for PainterWindow {
     fn on_selection_changed(
