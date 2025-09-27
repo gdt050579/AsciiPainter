@@ -12,13 +12,11 @@ use appcui::prelude::*;
 
 use super::painter_control::PainterControl;
 
-#[Window(events = MenuEvents + ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + CharPickerEvents + RadioBoxEvents,
-        commands = ForegroundColor + BackgroundColor + Char25 + Char50 + Char75 + Char100)]
+#[Window(events = ColorPickerEvents + SelectorEvents<LineType> + ButtonEvents + AccordionEvents + CharPickerEvents + RadioBoxEvents)]
 pub struct PainterWindow {
     painter: Handle<PainterControl>,
     tmp_string: String,
     acc: Handle<Accordion>,
-    menu: Handle<Menu>,
     // rectangle
     rectangle_fore: Handle<ColorPicker>,
     rectangle_back: Handle<ColorPicker>,
@@ -45,7 +43,6 @@ impl PainterWindow {
             tmp_string: String::with_capacity(1024),
             painter: Handle::None,
             acc: Handle::None,
-            menu: Handle::None,
             rectangle_fore: Handle::None,
             rectangle_back: Handle::None,
             rectangle_line_type: Handle::None,
@@ -208,35 +205,6 @@ impl PainterWindow {
             p.update_fillrectangle_properties(fill_fore, fill_back, fill_char, CharFlags::None);
             p.update_line_properties(line_fore, line_back, line_type, line_vert);
             p.update_text_properties(text_content, text_fore, text_back, CharFlags::None);
-        }
-    }
-}
-
-impl MenuEvents for PainterWindow {
-    fn on_update_menubar(&self, menubar: &mut MenuBar) {
-        menubar.add(self.menu, 0);
-    }
-
-    fn on_command(
-        &mut self,
-        _menu: Handle<Menu>,
-        _item: Handle<menu::Command>,
-        command: painterwindow::Commands,
-    ) {
-        match command {
-            painterwindow::Commands::Char25 => {
-                //self.set_drawing_char('░');
-            }
-            painterwindow::Commands::Char50 => {
-                //self.set_drawing_char('▒');
-            }
-            painterwindow::Commands::Char75 => {
-                //self.set_drawing_char('▓');
-            }
-            painterwindow::Commands::Char100 => {
-                //self.set_drawing_char('█');
-            }
-            _ => {}
         }
     }
 }

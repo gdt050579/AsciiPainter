@@ -8,12 +8,12 @@ mod drawing_object;
 use drawing_object::DrawingObject;
 use appcui::dialogs::{OpenFileDialogFlags, SaveFileDialogFlags};
 
-#[Desktop(events = [MenuEvents, DesktopEvents],  
+#[Desktop(events = [MenuEvents, DesktopEvents, AppBarEvents],  
           overwrite = OnPaint,
           commands = [New, Exit, Open, Save])]
 struct PainterDesktop {
     index: u32,
-    menu_file: Handle<Menu>,
+    menu_file: Handle<appbar::MenuButton>,
 }
 
 impl PainterDesktop {
@@ -34,15 +34,15 @@ impl OnPaint for PainterDesktop {
 
 impl DesktopEvents for PainterDesktop {
     fn on_start(&mut self) { 
-        self.menu_file = self.register_menu(menu!("
-            &File,class: PainterDesktop, items:[
+        self.menu_file = self.appbar().add(appbar::MenuButton::new("&File", menu!("
+            class: PainterDesktop, items:[
                 {'&New',cmd: New},
                 {'&Open',cmd: Open},
                 {'&Save',cmd: Save},
                 {-},
                 {'E&xit',cmd: Exit}
             ]
-        "));
+        "),0, appbar::Side::Left));
     }
 }
 
@@ -78,9 +78,10 @@ impl MenuEvents for PainterDesktop {
             }
         }
     }
-
-    fn on_update_menubar(&self, menubar: &mut MenuBar) {
-        menubar.add(self.menu_file, 0);
+}
+impl AppBarEvents for PainterDesktop {
+    fn on_update(&self, appbar: &mut AppBar) {
+        appbar.show(self.menu_file);
     }
 }
 
@@ -88,7 +89,7 @@ fn main() -> Result<(), appcui::system::Error> {
     #[cfg(target_os = "windows")]
     App::with_backend(appcui::backend::Type::WindowsConsole)
         .desktop(PainterDesktop::new())
-        .menu_bar()
+        .app_bar()
         .build()?
         .run();
 
