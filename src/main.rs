@@ -2,18 +2,23 @@ use appcui::prelude::*;
 mod painter_window;
 use painter_window::PainterWindow;
 mod painter_control;
+mod tile_designer_window;
+use tile_designer_window::TileDesignerWindow;
 mod selection;
 use selection::Selection;
 mod drawing_object;
 use drawing_object::DrawingObject;
+mod tile_editor;
+pub use tile_editor::TileEditor;
 use appcui::dialogs::{OpenFileDialogFlags, SaveFileDialogFlags};
 
 #[Desktop(events = [MenuEvents, DesktopEvents, AppBarEvents],  
           overwrite = OnPaint,
-          commands = [New, Exit, Open, Save])]
+          commands = [New, TileEditor, Exit, Open, Save])]
 struct PainterDesktop {
     index: u32,
     menu_file: Handle<appbar::MenuButton>,
+    menu_design: Handle<appbar::MenuButton>,
 }
 
 impl PainterDesktop {
@@ -22,8 +27,25 @@ impl PainterDesktop {
             base: Desktop::new(),
             index: 1,
             menu_file: Handle::None,
+            menu_design: Handle::None,
         }
     }
+}
+
+
+fn string_validation(s: &str) -> Result<(), String> {
+    let parts: Vec<&str> = s.split('x').collect();
+    if parts.len() != 2 {
+        return Err("Invalid format. Use 'width x height'.".to_string());
+    }
+    if let (Ok(w), Ok(h)) = (parts[0].trim().parse::<u32>(), parts[1].trim().parse::<u32>()) {
+        if w > 0 && h > 0 && w <= 255 && h <= 255 {
+            return Ok(());
+        } else {
+            return Err("Width and height must be between 1 and 255.".to_string());
+        }
+    }
+    return Err("Invalid format. Use 'width x height'.".to_string());
 }
 
 impl OnPaint for PainterDesktop {
@@ -43,6 +65,11 @@ impl DesktopEvents for PainterDesktop {
                 {'E&xit',cmd: Exit}
             ]
         "),0, appbar::Side::Left));
+        self.menu_design = self.appbar().add(appbar::MenuButton::new("&Design", menu!("
+            class: PainterDesktop, items:[
+                {'&Tile Editor',cmd: TileEditor},
+            ]
+        "),0, appbar::Side::Left));        
     }
 }
 
@@ -76,12 +103,19 @@ impl MenuEvents for PainterDesktop {
                     }
                 }
             }
+            painterdesktop::Commands::TileEditor => {
+                //if let Some(size) = dialogs::input::<Size>("Tile Size", "Enter the size of the tile (width x height)", None, Some(string_validation)) {
+                self.add_window(TileDesignerWindow::new(Size::new(7,3)));
+                //}
+                
+            }
         }
     }
 }
 impl AppBarEvents for PainterDesktop {
     fn on_update(&self, appbar: &mut AppBar) {
         appbar.show(self.menu_file);
+        appbar.show(self.menu_design);
     }
 }
 
