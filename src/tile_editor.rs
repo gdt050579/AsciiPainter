@@ -3,6 +3,7 @@ use appcui::prelude::*;
 #[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize)]
 pub struct TileEditor {
     tile: BitTileU128,
+    scrollbars: ScrollBars,
     hovered: Option<(u32, u32)>,
 }
 impl TileEditor {
@@ -10,6 +11,7 @@ impl TileEditor {
         Self {
             base: ControlBase::with_focus_overlay(Layout::fill()),
             tile: BitTileU128::new(size.width as u8, size.height as u8).unwrap(),
+            scrollbars: ScrollBars::new(true),
             hovered: None,
         }
     }
@@ -26,8 +28,15 @@ impl TileEditor {
     }
 }
 impl OnPaint for TileEditor {
-    fn on_paint(&self, surface: &mut Surface, _theme: &Theme) {
+    fn on_paint(&self, surface: &mut Surface, theme: &Theme) {
+        if self.has_focus() {
+            self.scrollbars.paint(surface, theme, self);
+            surface.reduce_clip_by(0, 0, 1, 1);
+        }
         surface.clear(char!("' ',white,black"));
+        let o = self.scrollbars.offset();
+        surface.set_origin(o.x, o.y);
+
         let w = self.tile.width() as i32;
         let h = self.tile.height() as i32;
         let attr = charattr!("gray,black");
@@ -89,17 +98,29 @@ impl OnPaint for TileEditor {
         }
     }
 }
-impl OnResize for TileEditor {}
+impl OnResize for TileEditor {
+    fn on_resize(&mut self, _old_size: Size, _new_size: Size) {
+        let w = self.tile.width() as i32;
+        let h = self.tile.height() as i32;
+        self.scrollbars
+            .resize((w * 3 + 3) as u64, (h * 2 + 2) as u64, &self.base);
+    }
+}
 
 impl OnMouseEvent for TileEditor {
     fn on_mouse_event(&mut self, event: &MouseEvent) -> EventProcessStatus {
+        if self.scrollbars.process_mouse_event(event) {
+            return EventProcessStatus::Processed;
+        }
         match event {
             MouseEvent::Enter | MouseEvent::Leave => {
                 self.hovered = None;
                 EventProcessStatus::Processed
             }
             MouseEvent::Over(point) => {
-                let new_hovered = self.mouse_to_pos(point.x, point.y);
+                let x = point.x - self.scrollbars.offset().x;
+                let y = point.y - self.scrollbars.offset().y;
+                let new_hovered = self.mouse_to_pos(x, y);
                 if new_hovered != self.hovered {
                     self.hovered = new_hovered;
                     EventProcessStatus::Processed
@@ -108,7 +129,9 @@ impl OnMouseEvent for TileEditor {
                 }
             }
             MouseEvent::Pressed(mouse_event_data) => {
-                if let Some((tx, ty)) = self.mouse_to_pos(mouse_event_data.x, mouse_event_data.y) {
+                let x = mouse_event_data.x - self.scrollbars.offset().x;
+                let y = mouse_event_data.y - self.scrollbars.offset().y;
+                if let Some((tx, ty)) = self.mouse_to_pos(x, y) {
                     if mouse_event_data.button == MouseButton::Left {
                         let _ = self.tile.set(tx, ty, true);
                     } else if mouse_event_data.button == MouseButton::Right {
