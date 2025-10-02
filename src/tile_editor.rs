@@ -67,7 +67,6 @@ impl OnPaint for TileEditor {
                 }
             }
         }
-        let r = Rect::with_size(2, 1, (w * 3 + 1) as u16, (h * 2 + 1) as u16);
         let ch_t = Character::with_attributes('┬', attr);
         let ch_b = Character::with_attributes('┴', attr);
         for x in 0..=w {
