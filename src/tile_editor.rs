@@ -1,19 +1,51 @@
 use appcui::prelude::*;
 
-#[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize)]
+#[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize , emit = TileChanged, events = AppBarEvents)]
 pub struct TileEditor {
     tile: BitTileU128,
     scrollbars: ScrollBars,
     hovered: Option<(u32, u32)>,
+    h_sep: Handle<appbar::Separator>,
+    h_clear: Handle<appbar::Button>,
+    h_left: Handle<appbar::Button>,
+    h_right: Handle<appbar::Button>,
+    h_up: Handle<appbar::Button>,
+    h_down: Handle<appbar::Button>,
 }
 impl TileEditor {
     pub fn new(size: Size) -> Self {
-        Self {
+        let mut c = Self {
             base: ControlBase::with_focus_overlay(Layout::fill()),
             tile: BitTileU128::new(size.width as u8, size.height as u8).unwrap(),
             scrollbars: ScrollBars::new(true),
             hovered: None,
-        }
+            h_sep: Handle::None,
+            h_clear: Handle::None,
+            h_left: Handle::None,
+            h_right: Handle::None,
+            h_up: Handle::None,
+            h_down: Handle::None,
+        };
+        c.h_sep = c
+            .appbar()
+            .add(appbar::Separator::new(1, appbar::Side::Left));
+        c.h_clear = c
+            .appbar()
+            .add(appbar::Button::new("Clear", 1, appbar::Side::Left));
+        c.h_left = c
+            .appbar()
+            .add(appbar::Button::new(" ← ", 1, appbar::Side::Left));
+        c.h_right = c
+            .appbar()
+            .add(appbar::Button::new(" → ", 1, appbar::Side::Left));
+        c.h_up = c
+            .appbar()
+            .add(appbar::Button::new(" ↑ ", 1, appbar::Side::Left));
+        c.h_down = c
+            .appbar()
+            .add(appbar::Button::new(" ↓ ", 1, appbar::Side::Left));
+        c.set_components_toolbar_margins(2, 4);
+        c
     }
     fn mouse_to_pos(&self, x: i32, y: i32) -> Option<(u32, u32)> {
         let w = self.tile.width() as i32;
@@ -25,6 +57,73 @@ impl TileEditor {
         } else {
             None
         }
+    }
+    pub fn tile(&self) -> BitTileU128 {
+        self.tile
+    }
+    pub fn rotate_left(&mut self) {
+        // rotate left with one position
+        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        for x in 0..self.tile.width() as u32 {
+            for y in 0..self.tile.height() as u32 {
+                if self.tile.get(x, y).unwrap_or(false) {
+                    if x > 0 {
+                        new_tile.set(x - 1, y, true);
+                    } else {
+                        new_tile.set(self.tile.width() as u32 - 1, y, true);
+                    }
+                }
+            }
+        }
+        self.tile = new_tile;
+    }
+    pub fn rotate_right(&mut self) {
+        // rotate right with one position
+        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        for x in 0..self.tile.width() as u32 {
+            for y in 0..self.tile.height() as u32 {
+                if self.tile.get(x, y).unwrap_or(false) {
+                    if x < self.tile.width() as u32 - 1 {
+                        new_tile.set(x + 1, y, true);
+                    } else {
+                        new_tile.set(0, y, true);
+                    }
+                }
+            }
+        }
+        self.tile = new_tile;
+    }
+    pub fn rotate_up(&mut self) {
+        // rotate up with one position
+        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        for x in 0..self.tile.width() as u32 {
+            for y in 0..self.tile.height() as u32 {
+                if self.tile.get(x, y).unwrap_or(false) {
+                    if y > 0 {
+                        new_tile.set(x, y - 1, true);
+                    } else {
+                        new_tile.set(x, self.tile.height() as u32 - 1, true);
+                    }
+                }
+            }
+        }
+        self.tile = new_tile;
+    }
+    pub fn rotate_down(&mut self) {
+        // rotate down with one position
+        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        for x in 0..self.tile.width() as u32 {
+            for y in 0..self.tile.height() as u32 {
+                if self.tile.get(x, y).unwrap_or(false) {
+                    if y < self.tile.height() as u32 - 1 {
+                        new_tile.set(x, y + 1, true);
+                    } else {
+                        new_tile.set(x, 0, true);
+                    }
+                }
+            }
+        }
+        self.tile = new_tile;
     }
 }
 impl OnPaint for TileEditor {
@@ -98,6 +197,35 @@ impl OnPaint for TileEditor {
         }
     }
 }
+impl AppBarEvents for TileEditor {
+    fn on_button_click(&mut self, button: Handle<appbar::Button>) {
+        if self.h_clear == button {
+            self.tile.reset(0);
+            self.raise_event(tileeditor::Events::TileChanged);
+        } else if self.h_left == button {
+            self.rotate_left();
+            self.raise_event(tileeditor::Events::TileChanged);
+        } else if self.h_right == button {
+            self.rotate_right();
+            self.raise_event(tileeditor::Events::TileChanged);
+        } else if self.h_up == button {
+            self.rotate_up();
+            self.raise_event(tileeditor::Events::TileChanged);
+        } else if self.h_down == button {
+            self.rotate_down();
+            self.raise_event(tileeditor::Events::TileChanged);
+        }
+    }
+
+    fn on_update(&self, appbar: &mut AppBar) {
+        appbar.show(self.h_sep);
+        appbar.show(self.h_clear);
+        appbar.show(self.h_left);
+        appbar.show(self.h_right);
+        appbar.show(self.h_up);
+        appbar.show(self.h_down);
+    }
+}
 impl OnResize for TileEditor {
     fn on_resize(&mut self, _old_size: Size, _new_size: Size) {
         let w = self.tile.width() as i32;
@@ -137,6 +265,7 @@ impl OnMouseEvent for TileEditor {
                     } else if mouse_event_data.button == MouseButton::Right {
                         let _ = self.tile.set(tx, ty, false);
                     }
+                    self.raise_event(tileeditor::Events::TileChanged);
                     return EventProcessStatus::Processed;
                 }
                 EventProcessStatus::Processed

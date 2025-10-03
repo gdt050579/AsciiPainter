@@ -116,7 +116,7 @@ impl AppBarEvents for PainterDesktop {
     fn on_update(&self, appbar: &mut AppBar) {
         appbar.show(self.menu_file);
         appbar.show(self.menu_design);
-    }
+    }   
 }
 
 fn main() -> Result<(), appcui::system::Error> {
