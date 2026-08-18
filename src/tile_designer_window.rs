@@ -40,7 +40,8 @@ impl TileEditorEvents for TileDesignerWindow {
         _: tileeditor::Events,
     ) -> EventProcessStatus {
         if let Some(tile) = self.control(handle).map(|c| c.tile()) {
-            let hash_str = format!("0x{:X}", tile.to_u128());
+            //let hash_str = format!("0x{:X}", tile.to_u128());
+            let hash_str = "?".to_string();
             let h = self.h_hash;
             if let Some(txh) = self.control_mut(h) {
                 txh.set_text(&hash_str);
@@ -49,7 +50,7 @@ impl TileEditorEvents for TileDesignerWindow {
             if let Some(cnv) = self.control_mut(h) {
                 let surface = cnv.drawing_surface_mut();
                 surface.clear(char!("' ',white,black"));
-                surface.draw_tile(0,0,&tile, Color::White, Color::Black, BitTileRenderMethod::SmallBlocks);
+                surface.draw_tile(0,0,&tile, Color::White, Color::Black, BitTileRenderMethod::Braille);
             }
         }
         EventProcessStatus::Processed

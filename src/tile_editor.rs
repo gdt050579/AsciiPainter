@@ -1,8 +1,8 @@
 use appcui::prelude::*;
 
-#[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize , emit = TileChanged, events = AppBarEvents)]
+#[CustomControl(overwrite = OnPaint + OnMouseEvent + OnResize + OnKeyPressed , emit = TileChanged, events = AppBarEvents)]
 pub struct TileEditor {
-    tile: BitTileU128,
+    tile: BitTile<512>,
     scrollbars: ScrollBars,
     hovered: Option<(u32, u32)>,
     h_sep: Handle<appbar::Separator>,
@@ -14,9 +14,10 @@ pub struct TileEditor {
 }
 impl TileEditor {
     pub fn new(size: Size) -> Self {
+
         let mut c = Self {
             base: ControlBase::with_focus_overlay(Layout::fill()),
-            tile: BitTileU128::new(size.width as u8, size.height as u8).unwrap(),
+            tile: BitTile::<512>::new(size.width as u8, size.height as u8).unwrap(),
             scrollbars: ScrollBars::new(true),
             hovered: None,
             h_sep: Handle::None,
@@ -58,12 +59,12 @@ impl TileEditor {
             None
         }
     }
-    pub fn tile(&self) -> BitTileU128 {
+    pub fn tile(&self) -> BitTile<512> {
         self.tile
     }
     pub fn rotate_left(&mut self) {
         // rotate left with one position
-        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        let mut new_tile = BitTile::<512>::new(self.tile.width(), self.tile.height()).unwrap();
         for x in 0..self.tile.width() as u32 {
             for y in 0..self.tile.height() as u32 {
                 if self.tile.get(x, y).unwrap_or(false) {
@@ -79,7 +80,7 @@ impl TileEditor {
     }
     pub fn rotate_right(&mut self) {
         // rotate right with one position
-        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        let mut new_tile = BitTile::<512>::new(self.tile.width(), self.tile.height()).unwrap();
         for x in 0..self.tile.width() as u32 {
             for y in 0..self.tile.height() as u32 {
                 if self.tile.get(x, y).unwrap_or(false) {
@@ -95,7 +96,7 @@ impl TileEditor {
     }
     pub fn rotate_up(&mut self) {
         // rotate up with one position
-        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        let mut new_tile = BitTile::<512>::new(self.tile.width(), self.tile.height()).unwrap();
         for x in 0..self.tile.width() as u32 {
             for y in 0..self.tile.height() as u32 {
                 if self.tile.get(x, y).unwrap_or(false) {
@@ -111,7 +112,7 @@ impl TileEditor {
     }
     pub fn rotate_down(&mut self) {
         // rotate down with one position
-        let mut new_tile = BitTileU128::new(self.tile.width(), self.tile.height()).unwrap();
+        let mut new_tile = BitTile::<512>::new(self.tile.width(), self.tile.height()).unwrap();
         for x in 0..self.tile.width() as u32 {
             for y in 0..self.tile.height() as u32 {
                 if self.tile.get(x, y).unwrap_or(false) {
@@ -200,7 +201,7 @@ impl OnPaint for TileEditor {
 impl AppBarEvents for TileEditor {
     fn on_button_click(&mut self, button: Handle<appbar::Button>) {
         if self.h_clear == button {
-            self.tile.reset(0);
+            self.tile.clear(false);
             self.raise_event(tileeditor::Events::TileChanged);
         } else if self.h_left == button {
             self.rotate_left();
@@ -271,6 +272,19 @@ impl OnMouseEvent for TileEditor {
                 EventProcessStatus::Processed
             }
             _ => EventProcessStatus::Ignored,
+        }
+    }
+}
+
+impl OnKeyPressed for TileEditor {
+    fn on_key_pressed(&mut self, key: Key, _: char) -> EventProcessStatus {
+        match key.value() {
+            key!("Ctrl+C") => {
+                let s = self.tile.to_string_format();
+                Clipboard::set_text(&s);
+                EventProcessStatus::Processed
+            }
+            _ => EventProcessStatus::Ignored
         }
     }
 }

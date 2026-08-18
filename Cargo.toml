@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-appcui = { version =  "0.4.1", features = ["TRUE_COLORS"]}
+#appcui = { version =  "0.4.1", features = ["TRUE_COLORS"]}
+appcui = { git = "https://github.com/gdt050579/AppCUI-rs.git", branch = "gallery" }

@@ -105,7 +105,7 @@ impl MenuEvents for PainterDesktop {
             }
             painterdesktop::Commands::TileEditor => {
                 //if let Some(size) = dialogs::input::<Size>("Tile Size", "Enter the size of the tile (width x height)", None, Some(string_validation)) {
-                self.add_window(TileDesignerWindow::new(Size::new(15,5)));
+                self.add_window(TileDesignerWindow::new(Size::new(16,16)));
                 //}
                 
             }
